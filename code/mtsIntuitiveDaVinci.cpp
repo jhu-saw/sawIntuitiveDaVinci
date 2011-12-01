@@ -30,7 +30,7 @@ http://www.cisst.org/cisst/license.txt.
 
 namespace mtsIntuitiveDaVinciUtilities
 {
-	const ISI_UINT ALL_DOFS[ISI_NUM_MAX_JOINTS] = { 0, 1, 2, 3, 4, 5, 6, 7 };
+    const ISI_UINT ALL_DOFS[ISI_NUM_MAX_JOINTS] = { 0, 1, 2, 3, 4, 5, 6, 7 };
 
     ISI_MANIP_INDEX ManipulatorIndexToISI(mtsIntuitiveDaVinci::ManipulatorIndexType index)
     {
@@ -161,23 +161,23 @@ namespace mtsIntuitiveDaVinciUtilities
         output.Rotation().Column(2).Assign(input.rot.row0.z, input.rot.row1.z, input.rot.row2.z);
     }
 
-	// Convert vctFrm3 to ISI_TRANSFORM
-	//TODO: can this be optimized ? (Nico)
+    // Convert vctFrm3 to ISI_TRANSFORM
+    //TODO: can this be optimized ? (Nico)
     void FrameToISI(const vctFrm3 & input, ISI_TRANSFORM & output)
     {
-		output.pos.x = input.Translation().X() / 1000.0;
-		output.pos.y = input.Translation().Y() / 1000.0;
-		output.pos.z = input.Translation().Z() / 1000.0;
+        output.pos.x = input.Translation().X() / 1000.0;
+        output.pos.y = input.Translation().Y() / 1000.0;
+        output.pos.z = input.Translation().Z() / 1000.0;
 
-		output.rot.row0.x = input.Rotation()[0][0];
-		output.rot.row0.y = input.Rotation()[0][1];
-		output.rot.row0.z = input.Rotation()[0][2];
-		output.rot.row1.x = input.Rotation()[1][0];
-		output.rot.row1.y = input.Rotation()[1][1];
-		output.rot.row1.z = input.Rotation()[1][2];
-		output.rot.row2.x = input.Rotation()[2][0];
-		output.rot.row2.y = input.Rotation()[2][1];
-		output.rot.row2.z = input.Rotation()[2][2];
+        output.rot.row0.x = input.Rotation()[0][0];
+        output.rot.row0.y = input.Rotation()[0][1];
+        output.rot.row0.z = input.Rotation()[0][2];
+        output.rot.row1.x = input.Rotation()[1][0];
+        output.rot.row1.y = input.Rotation()[1][1];
+        output.rot.row1.z = input.Rotation()[1][2];
+        output.rot.row2.x = input.Rotation()[2][0];
+        output.rot.row2.y = input.Rotation()[2][1];
+        output.rot.row2.z = input.Rotation()[2][2];
     }
 
 
@@ -352,6 +352,8 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
     bool eventCriterion;
     ArmData * arm;
     MasterArmData * masterArm;
+    SlaveArmData* slaveArm;
+
     bool atLeastOneMasterSelected = false;
     prmEventButton buttonPayload;
 
@@ -446,10 +448,126 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
             } else {
                 ISI_TRANSFORM * isiTransform = reinterpret_cast<ISI_TRANSFORM *>(streamData.data);
                 mtsIntuitiveDaVinciUtilities::FrameFromISI(*isiTransform,
-                                                        arm->PositionCartesian.Position());
+                                                           arm->PositionCartesian.Position());
             }
         }
 
+        status = isi_get_stream_field(isiIndex, ISI_JOINT_VELOCITY, &streamData);
+        if (status != ISI_SUCCESS) {
+            CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: get stream field failed for ISI_JOINT_VELOCITY, manipulator  \""
+                                    << ManipulatorIndexToString(index) << "\", status: "
+                                    << mtsIntuitiveDaVinciUtilities::StatusToString(status) << std::endl;
+        } else {
+            numberOfJoints = GetNumberOfJoints(index);
+            // check size of data
+            if (streamData.count != numberOfJoints) {
+                CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: received wrong number of elements for ISI_JOINT_VELOCITY, manipulator \""
+                                        << ManipulatorIndexToString(index) << "\", expected "
+                                        << numberOfJoints << ", received "
+                                        << streamData.count << std::endl;
+            } else {
+                // save the joint values
+                vctDynamicConstVectorRef<float> jointVel;
+                jointVel.SetRef(numberOfJoints, streamData.data);
+                arm->VelocityJoint.Velocity().Assign(jointVel);
+            }
+        }
+        status = isi_get_stream_field(isiIndex, ISI_TIP_LINEAR_VELOCITY, &streamData);
+        if (status != ISI_SUCCESS) {
+            CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: get stream field failed for ISI_TIP_LINEAR_VELOCITY, manipulator  \""
+                                    << ManipulatorIndexToString(index) << "\", status: "
+                                    << mtsIntuitiveDaVinciUtilities::StatusToString(status) << std::endl;
+        } else {
+            // check size of data, 1 vector
+            if (streamData.count != 3) {
+                CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: received wrong number of elements for ISI_TIP_LINEAR_VELOCITY, manipulator \""
+                                        << ManipulatorIndexToString(index) << "\", expected 3, received "
+                                        << streamData.count << std::endl;
+            } else {
+                ISI_VECTOR * isiTransform = reinterpret_cast<ISI_VECTOR *>(streamData.data);
+                vctDouble3& vel = arm->VelocityCartesian.VelocityLinear();
+                vel[0] = isiTransform->x;
+                vel[1] = isiTransform->y;
+                vel[2] = isiTransform->z;
+            }
+        }
+        status = isi_get_stream_field(isiIndex, ISI_TIP_ANGULAR_VELOCITY, &streamData);
+        if (status != ISI_SUCCESS) {
+            CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: get stream field failed for ISI_TIP_ANGULAR_VELOCITY, manipulator  \""
+                                    << ManipulatorIndexToString(index) << "\", status: "
+                                    << mtsIntuitiveDaVinciUtilities::StatusToString(status) << std::endl;
+        } else {
+            // check size of data, 1 vector
+            if (streamData.count != 3) {
+                CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: received wrong number of elements for ISI_TIP_ANGULAR_VELOCITY, manipulator \""
+                                        << ManipulatorIndexToString(index) << "\", expected 3, received "
+                                        << streamData.count << std::endl;
+            } else {
+                ISI_VECTOR * isiTransform = reinterpret_cast<ISI_VECTOR *>(streamData.data);
+                vctDouble3& vel = arm->VelocityCartesian.VelocityAngular();
+                vel[0] = isiTransform->x;
+                vel[1] = isiTransform->y;
+                vel[2] = isiTransform->z;
+            }
+        }
+        if ((index >= PSM1) && (index <= ECM1)) {
+            slaveArm = reinterpret_cast<SlaveArmData *>(arm);
+
+            status = isi_get_stream_field(isiIndex, ISI_RCM_TRANSFORM, &streamData);
+            if (status != ISI_SUCCESS) {
+                CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: get stream field failed for ISI_RCM_TRANSFORM, manipulator  \""
+                                        << ManipulatorIndexToString(index) << "\", status: "
+                                        << mtsIntuitiveDaVinciUtilities::StatusToString(status) << std::endl;
+            } else {
+                // check size of data, 4 vectors
+                if (streamData.count != 12) {
+                    CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: received wrong number of elements for ISI_RCM_TRANSFORM, manipulator \""
+                                            << ManipulatorIndexToString(index) << "\", expected 12, received "
+                                            << streamData.count << std::endl;
+                } else {
+                    ISI_TRANSFORM * isiTransform = reinterpret_cast<ISI_TRANSFORM *>(streamData.data);
+                    mtsIntuitiveDaVinciUtilities::FrameFromISI(*isiTransform,
+                                                               slaveArm->PositionCartesianRCM.Position());
+                }
+            }
+            status = isi_get_stream_field(isiIndex, ISI_MOUNT_TRANSFORM, &streamData);
+            if (status != ISI_SUCCESS) {
+                CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: get stream field failed for ISI_MOUNT_TRANSFORM, manipulator  \""
+                                        << ManipulatorIndexToString(index) << "\", status: "
+                                        << mtsIntuitiveDaVinciUtilities::StatusToString(status) << std::endl;
+            } else {
+                // check size of data, 4 vectors
+                if (streamData.count != 12) {
+                    CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: received wrong number of elements for ISI_MOUNT_TRANSFORM, manipulator \""
+                                            << ManipulatorIndexToString(index) << "\", expected 12, received "
+                                            << streamData.count << std::endl;
+                } else {
+                    ISI_TRANSFORM * isiTransform = reinterpret_cast<ISI_TRANSFORM *>(streamData.data);
+                    mtsIntuitiveDaVinciUtilities::FrameFromISI(*isiTransform,
+                                                               slaveArm->PositionCartesianSetup.Position());
+                }
+            }
+            status = isi_get_stream_field(isiIndex, ISI_SUJ_JOINT_VALUES, &streamData);
+            if (status != ISI_SUCCESS) {
+                CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: get stream field failed for ISI_SUJ_JOINT_VALUES, manipulator  \""
+                                        << ManipulatorIndexToString(index) << "\", status: "
+                                        << mtsIntuitiveDaVinciUtilities::StatusToString(status) << std::endl;
+            } else {
+                numberOfJoints = 6;
+                // check size of data
+                if (streamData.count != numberOfJoints) {
+                    CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: received wrong number of elements for ISI_SUJ_JOINT_VALUES, manipulator \""
+                                            << ManipulatorIndexToString(index) << "\", expected "
+                                            << numberOfJoints << ", received "
+                                            << streamData.count << std::endl;
+                } else {
+                    // save the joint values
+                    vctDynamicConstVectorRef<float> jointVel;
+                    jointVel.SetRef(numberOfJoints, streamData.data);
+                    slaveArm->PositionJointSetup.Position().Assign(jointVel);
+                }
+            }
+        }
         // advance state table for this arm
         arm->StateTable->Advance();
     }
@@ -595,7 +713,7 @@ void mtsIntuitiveDaVinci::LogSystemConfiguration(cmnLogLevel logLevel) const
 
 
 void mtsIntuitiveDaVinci::LogManipulatorConfiguration(ManipulatorIndexType index,
-                                                   cmnLogLevel logLevel) const
+                                                      cmnLogLevel logLevel) const
 {
     // check if system is connected
     if (!this->Connected) {
@@ -612,7 +730,7 @@ void mtsIntuitiveDaVinci::LogManipulatorConfiguration(ManipulatorIndexType index
 
 
 void mtsIntuitiveDaVinci::LogToolConfiguration(ManipulatorIndexType index,
-                                            cmnLogLevel logLevel) const
+                                               cmnLogLevel logLevel) const
 {
     // check if system is connected
     if (!this->Connected) {
