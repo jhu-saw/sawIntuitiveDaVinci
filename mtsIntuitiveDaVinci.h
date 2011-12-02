@@ -31,9 +31,10 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstParameterTypes/prmPositionJointGet.h>
 #include <cisstParameterTypes/prmVelocityJointGet.h>
 #include <cisstParameterTypes/prmEventButton.h>
-
-
 #include <cisstParameterTypes/prmPositionCartesianSet.h>
+
+// Always include last
+#include <sawIntuitiveDaVinci/sawIntuitiveDaVinciExport.h>
 
 /*!
   \file
@@ -60,14 +61,14 @@ namespace mtsIntuitiveDaVinciUtilities {
 };
 
 
-class mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSignal {
+class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSignal {
 
     CMN_DECLARE_SERVICES(CMN_NO_DYNAMIC_CREATION, CMN_LOG_LOD_RUN_WARNING);
 
     friend void mtsIntuitiveDaVinciUtilities::StreamCallbackInternal(void * userData);
     friend void mtsIntuitiveDaVinciUtilities::EventCallbackInternal(int manipulatorId,
-                                                                 int eventId,
-                                                                 void * userData);
+                                                                    int eventId,
+                                                                    void * userData);
 public:
 
     /*! Constructor.*/
