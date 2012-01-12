@@ -40,7 +40,7 @@ if (cisst_FOUND)
 
   set (sawIntuitiveDaVinci_INCLUDE_DIR "${sawComponents_SOURCE_DIR}")
   set (sawIntuitiveDaVinci_LIBRARY_DIR "${LIBRARY_OUTPUT_PATH}")
-  set (sawIntuitiveDaVinci_LIBRARIES sawIntuitiveDaVinci ${isi_api_LIBRARIES})
+  set (sawIntuitiveDaVinci_LIBRARIES sawIntuitiveDaVinci "${isi_api_LIBRARIES}")
 
   configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/sawIntuitiveDaVinciConfig.cmake.in"
                   "${sawComponents_BINARY_DIR}/sawIntuitiveDaVinciConfig.cmake"
