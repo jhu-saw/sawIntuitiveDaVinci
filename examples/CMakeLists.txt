@@ -28,7 +28,7 @@ if (cisst_FOUND)
   include (${CISST_USE_FILE})
 
   # sawIntuitiveDaVinci has been compiled within cisst, we should find it automatically
-  find_package (sawIntuitiveDaVinci REQUIRED HINTS "${cisst_saw_BINARY_DIR}/saw/components")
+  cisst_find_saw_component (sawIntuitiveDaVinci REQUIRED)
 
   if (sawIntuitiveDaVinci_FOUND)
 
