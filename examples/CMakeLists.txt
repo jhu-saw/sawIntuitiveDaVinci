@@ -38,7 +38,7 @@ if (cisst_FOUND)
 
     add_executable (sawIntuitiveDaVinciExample
                     main.cpp)
-
+    set_property (TARGET sawIntuitiveDaVinciExample PROPERTY FOLDER "sawIntuitiveDaVinci")
     cisst_target_link_libraries (sawIntuitiveDaVinciExample ${REQUIRED_CISST_LIBRARIES})
     target_link_libraries (sawIntuitiveDaVinciExample ${sawIntuitiveDaVinci_LIBRARIES})
 

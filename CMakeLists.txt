@@ -4,7 +4,7 @@
 # Author(s):  Anton Deguet
 # Created on: 2011-01-20
 #
-# (C) Copyright 2011 Johns Hopkins University (JHU), All Rights
+# (C) Copyright 2011-2012 Johns Hopkins University (JHU), All Rights
 # Reserved.
 #
 # --- begin cisst license - do not edit ---
@@ -15,11 +15,7 @@
 #
 # --- end cisst license ---
 
-# To find isi_api-config.cmake
-find_package (isi_api REQUIRED)
+project (sawIntuitiveDaVinci)
 
-if (isi_api_FOUND)
-  include_directories (${CMAKE_CURRENT_BINARY_DIR} ${isi_api_INCLUDE_DIR})
-  add_subdirectory (code)
-  add_subdirectory (examples)
-endif (isi_api_FOUND)
+add_subdirectory (code)
+add_subdirectory (examples)
