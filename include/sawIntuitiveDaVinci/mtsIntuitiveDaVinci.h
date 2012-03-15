@@ -166,6 +166,9 @@ protected:
         mtsInterfaceProvided * MastersAsMiceProvidedInterface;
         mtsFunctionWrite MastersAsMice;
         bool MastersAsMiced;
+
+        mtsInterfaceProvided * FollowModeProvidedInterface;
+        mtsFunctionWrite FollowMode;
     };
 
     /*! Info for all arms, this container is the primary one */

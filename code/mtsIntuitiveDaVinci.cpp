@@ -162,24 +162,22 @@ namespace mtsIntuitiveDaVinciUtilities
     }
 
     // Convert vctFrm3 to ISI_TRANSFORM
-    //TODO: can this be optimized ? (Nico)
     void FrameToISI(const vctFrm3 & input, ISI_TRANSFORM & output)
     {
-        output.pos.x = input.Translation().X() / 1000.0;
-        output.pos.y = input.Translation().Y() / 1000.0;
-        output.pos.z = input.Translation().Z() / 1000.0;
+        output.pos.x = static_cast<ISI_FLOAT>(input.Translation().X() / 1000.0);
+        output.pos.y = static_cast<ISI_FLOAT>(input.Translation().Y() / 1000.0);
+        output.pos.z = static_cast<ISI_FLOAT>(input.Translation().Z() / 1000.0);
 
-        output.rot.row0.x = input.Rotation()[0][0];
-        output.rot.row0.y = input.Rotation()[0][1];
-        output.rot.row0.z = input.Rotation()[0][2];
-        output.rot.row1.x = input.Rotation()[1][0];
-        output.rot.row1.y = input.Rotation()[1][1];
-        output.rot.row1.z = input.Rotation()[1][2];
-        output.rot.row2.x = input.Rotation()[2][0];
-        output.rot.row2.y = input.Rotation()[2][1];
-        output.rot.row2.z = input.Rotation()[2][2];
+        output.rot.row0.x = static_cast<ISI_FLOAT>(input.Rotation().Element(0, 0));
+        output.rot.row0.y = static_cast<ISI_FLOAT>(input.Rotation().Element(0, 1));
+        output.rot.row0.z = static_cast<ISI_FLOAT>(input.Rotation().Element(0, 2));
+        output.rot.row1.x = static_cast<ISI_FLOAT>(input.Rotation().Element(1, 0));
+        output.rot.row1.y = static_cast<ISI_FLOAT>(input.Rotation().Element(1, 1));
+        output.rot.row1.z = static_cast<ISI_FLOAT>(input.Rotation().Element(1, 2));
+        output.rot.row2.x = static_cast<ISI_FLOAT>(input.Rotation().Element(2, 0));
+        output.rot.row2.y = static_cast<ISI_FLOAT>(input.Rotation().Element(2, 1));
+        output.rot.row2.z = static_cast<ISI_FLOAT>(input.Rotation().Element(2, 2));
     }
-
 
 } // end of namespace mtsIntuitiveDaVinciUtilities
 
@@ -648,6 +646,15 @@ void mtsIntuitiveDaVinci::EventCallback(ManipulatorIndexType manipulatorIndex, i
     case ISI_API_VIDEO_SWAP:
         this->Console.CameraQuickTap();
         break;
+    case ISI_API_FOLLOWING_ON:
+        buttonPayload.SetType(prmEventButton::PRESSED);
+        this->Console.FollowMode(buttonPayload);
+        break;
+    case ISI_API_FOLLOWING_OFF:
+        buttonPayload.SetType(prmEventButton::RELEASED);
+        this->Console.FollowMode(buttonPayload);
+        break;
+
     default:
         CMN_LOG_CLASS_RUN_WARNING << "EventCallback: event type not handled: " << eventId << std::endl;
         break;
@@ -967,6 +974,10 @@ void mtsIntuitiveDaVinci::SetupConsoleInterfaces(void)
     Console.MastersAsMiceProvidedInterface = this->AddInterfaceProvided("MastersAsMice");
     CMN_ASSERT(Console.MastersAsMiceProvidedInterface);
     Console.MastersAsMiceProvidedInterface->AddEventWrite(Console.MastersAsMice, "Button", prmEventButton());
+
+    Console.FollowModeProvidedInterface = this->AddInterfaceProvided("FollowMode");
+    CMN_ASSERT(Console.FollowModeProvidedInterface);
+    Console.FollowModeProvidedInterface->AddEventWrite(Console.FollowMode, "Button", prmEventButton());
 }
 
 
