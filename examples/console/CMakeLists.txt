@@ -16,7 +16,7 @@
 # --- end cisst license ---
 
 # create a list of libraries needed for this project
-set (REQUIRED_CISST_LIBRARIES cisstCommon cisstVector cisstOSAbstraction cisstNumerical
+set (REQUIRED_CISST_LIBRARIES cisstCommon cisstVector cisstOSAbstraction
                               cisstMultiTask cisstParameterTypes)
 
 # find cisst and make sure the required libraries have been compiled
