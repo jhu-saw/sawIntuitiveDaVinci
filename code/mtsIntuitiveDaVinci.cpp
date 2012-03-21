@@ -221,7 +221,8 @@ CMN_IMPLEMENT_SERVICES(mtsIntuitiveDaVinci);
 
 mtsIntuitiveDaVinci::mtsIntuitiveDaVinci(const std::string & name, unsigned int rateInHz):
     mtsTaskPeriodic(name,10 * cmn_ms),//TaskFromSignal(name),
-    RateInHz(rateInHz)
+    RateInHz(rateInHz),
+    Connected(false)
 {
     this->SetupAllInterfaces();
 }
