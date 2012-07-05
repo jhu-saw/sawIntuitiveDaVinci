@@ -35,10 +35,14 @@ namespace mtsIntuitiveDaVinciUtilities
     ISI_MANIP_INDEX ManipulatorIndexToISI(mtsIntuitiveDaVinci::ManipulatorIndexType index)
     {
         switch (index) {
-        case mtsIntuitiveDaVinci::MTML:
+        case mtsIntuitiveDaVinci::MTML1:
             return ISI_MTML1;
-        case mtsIntuitiveDaVinci::MTMR:
+        case mtsIntuitiveDaVinci::MTMR1:
             return ISI_MTMR1;
+        case mtsIntuitiveDaVinci::MTML2:
+            return ISI_MTML2;
+        case mtsIntuitiveDaVinci::MTMR2:
+            return ISI_MTMR2;
         case mtsIntuitiveDaVinci::PSM1:
             return ISI_PSM1;
         case mtsIntuitiveDaVinci::PSM2:
@@ -47,6 +51,12 @@ namespace mtsIntuitiveDaVinciUtilities
             return ISI_PSM3;
         case mtsIntuitiveDaVinci::ECM1:
             return ISI_ECM; // Black Box API dropped the number
+        case mtsIntuitiveDaVinci::CONSOLE1:
+            return ISI_CONSOLE1;
+        case mtsIntuitiveDaVinci::CONSOLE2:
+            return ISI_CONSOLE2;
+        default:
+            CMN_LOG_RUN_WARNING << "mtsIntuitiveDaVinciUtilities::ManipulatorIndexToISI: index out of range" << std::endl;
         }
         return ISI_NUM_MANIPS;
     }
@@ -56,9 +66,13 @@ namespace mtsIntuitiveDaVinciUtilities
     {
         switch (index) {
         case ISI_MTML1:
-            return mtsIntuitiveDaVinci::MTML;
+            return mtsIntuitiveDaVinci::MTML1;
         case ISI_MTMR1:
-            return mtsIntuitiveDaVinci::MTMR;
+            return mtsIntuitiveDaVinci::MTMR1;
+        case ISI_MTML2:
+            return mtsIntuitiveDaVinci::MTML2;
+        case ISI_MTMR2:
+            return mtsIntuitiveDaVinci::MTMR2;
         case ISI_PSM1:
             return mtsIntuitiveDaVinci::PSM1;
         case ISI_PSM2:
@@ -67,8 +81,20 @@ namespace mtsIntuitiveDaVinciUtilities
             return mtsIntuitiveDaVinci::PSM3;
         case ISI_ECM:
             return mtsIntuitiveDaVinci::ECM1; // Black Box API dropped the number
+        case ISI_CONSOLE1:
+            return mtsIntuitiveDaVinci::CONSOLE1;
+        case ISI_CONSOLE2:
+            return mtsIntuitiveDaVinci::CONSOLE2;
+        default:
+            CMN_LOG_RUN_WARNING << "mtsIntuitiveDaVinciUtilities::ManipulatorIndexToISI: index out of range" << std::endl;
         }
         return mtsIntuitiveDaVinci::NUMBER_MANIPULATORS;
+    }
+
+
+    std::string GetManipulatorName(mtsIntuitiveDaVinci::ManipulatorIndexType index)
+    {
+        return isi_get_manip_name(ManipulatorIndexToISI(index));
     }
 
 
@@ -126,7 +152,7 @@ namespace mtsIntuitiveDaVinciUtilities
 
     void ISICALLBACK EventCallback(ISI_MANIP_INDEX isiManipulatorIndex,
                                    ISI_EVENT_ID eventId,
-                                   ISI_INT arguments[ISI_NUM_EVENT_ARGS], // introduced in isi_api 1.0.5
+                                   ISI_INT CMN_UNUSED(arguments[ISI_NUM_EVENT_ARGS]), // introduced in isi_api 1.0.5
                                    void * userData)
     {
         EventCallbackInternal(isiManipulatorIndex, eventId, userData);
@@ -203,7 +229,6 @@ mtsIntuitiveDaVinci::MasterArmData::MasterArmData(void):
 mtsIntuitiveDaVinci::SlaveArmData::SlaveArmData(void)
 {}
 
-
 mtsIntuitiveDaVinci::ConsoleData::ConsoleData(void):
     ProvidedInterface(0),
     StandbyProvidedInterface(0),
@@ -215,14 +240,21 @@ mtsIntuitiveDaVinci::ConsoleData::ConsoleData(void):
     MastersAsMiced(false)
 {}
 
+mtsIntuitiveDaVinci::EventData::EventData(void):
+    ProvidedInterface(0)
+{}
 
 CMN_IMPLEMENT_SERVICES(mtsIntuitiveDaVinci);
 
 
-mtsIntuitiveDaVinci::mtsIntuitiveDaVinci(const std::string & name, unsigned int rateInHz):
-    mtsTaskPeriodic(name,10 * cmn_ms),//TaskFromSignal(name),
+mtsIntuitiveDaVinci::mtsIntuitiveDaVinci(const std::string & name, unsigned int rateInHz,
+                                         const char * ipaddress, unsigned int port, unsigned int password):
+    mtsTaskPeriodic(name, 10 * cmn_ms), //TaskFromSignal(name),
+    Connected(false),
     RateInHz(rateInHz),
-    Connected(false)
+    IPAddress(ipaddress),
+    Port(port),
+    Password(password)
 {
     this->SetupAllInterfaces();
 }
@@ -279,7 +311,7 @@ void mtsIntuitiveDaVinci::Cleanup(void)
 bool mtsIntuitiveDaVinci::Connect(void)
 {
     ISI_STATUS status;
-    status = isi_connect();
+    status = isi_connect_ex(IPAddress.c_str(), Port, Password);
     if (status != ISI_SUCCESS) {
         CMN_LOG_CLASS_INIT_ERROR << "Connect: connection failed for \"" << this->GetName()
                                  << "\", status: "
@@ -357,8 +389,8 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
     prmEventButton buttonPayload;
 
     // subscribe to the API stream
-    for (index = MTML;
-         index < CONSOLE;
+    for (index = MTML1;
+         index < CONSOLE1;
          index = static_cast<ManipulatorIndexType>(index + 1)) {
         // get local indices and pointers setup
         isiIndex = mtsIntuitiveDaVinciUtilities::ManipulatorIndexToISI(index);
@@ -383,7 +415,7 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                 jointRef.SetRef(numberOfJoints, streamData.data);
                 arm->PositionJoint.Position().Assign(jointRef);
                 // trigger events based on joint values for masters
-                if ((index == MTML) || (index == MTMR)) {
+                if ((index == MTML1) || (index == MTMR1)) {
                     masterArm = reinterpret_cast<MasterArmData *>(arm);
                     // compute angle on last joint to trigger select event
                     eventCriterion = ((masterArm->PositionJoint.Position()[numberOfJoints - 1]) < MasterArmData::SelectAngle);
@@ -451,6 +483,7 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
             }
         }
 
+        // joint velocities for all manipulators
         status = isi_get_stream_field(isiIndex, ISI_JOINT_VELOCITY, &streamData);
         if (status != ISI_SUCCESS) {
             CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: get stream field failed for ISI_JOINT_VELOCITY, manipulator  \""
@@ -471,6 +504,30 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                 arm->VelocityJoint.Velocity().Assign(jointVel);
             }
         }
+
+        // joint torques for all manipulators
+        status = isi_get_stream_field(isiIndex, ISI_JOINT_TORQUE, &streamData);
+        if (status != ISI_SUCCESS) {
+            CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: get stream field failed for ISI_JOINT_TORQUE, manipulator  \""
+                                    << ManipulatorIndexToString(index) << "\", status: "
+                                    << mtsIntuitiveDaVinciUtilities::StatusToString(status) << std::endl;
+        } else {
+            numberOfJoints = GetNumberOfJoints(index);
+            // check size of data
+            if (streamData.count != numberOfJoints) {
+                CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: received wrong number of elements for ISI_JOINT_TORQUE, manipulator \""
+                                        << ManipulatorIndexToString(index) << "\", expected "
+                                        << numberOfJoints << ", received "
+                                        << streamData.count << std::endl;
+            } else {
+                // save the joint values
+                vctDynamicConstVectorRef<float> jointTorque;
+                jointTorque.SetRef(numberOfJoints, streamData.data);
+                arm->TorqueJoint.Velocity().Assign(jointTorque);
+            }
+        }
+
+        // tip linear velocity for all manipulators
         status = isi_get_stream_field(isiIndex, ISI_TIP_LINEAR_VELOCITY, &streamData);
         if (status != ISI_SUCCESS) {
             CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: get stream field failed for ISI_TIP_LINEAR_VELOCITY, manipulator  \""
@@ -490,6 +547,8 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                 vel[2] = isiTransform->z;
             }
         }
+
+        // tip angular velocity for all manipulators
         status = isi_get_stream_field(isiIndex, ISI_TIP_ANGULAR_VELOCITY, &streamData);
         if (status != ISI_SUCCESS) {
             CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: get stream field failed for ISI_TIP_ANGULAR_VELOCITY, manipulator  \""
@@ -509,6 +568,8 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                 vel[2] = isiTransform->z;
             }
         }
+
+        // rcm transform for the patient side and endoscopic manipulators
         if ((index >= PSM1) && (index <= ECM1)) {
             slaveArm = reinterpret_cast<SlaveArmData *>(arm);
 
@@ -529,6 +590,8 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                                                                slaveArm->PositionCartesianRCM.Position());
                 }
             }
+
+            // mount transform for the patient side and endoscopic manipulators
             status = isi_get_stream_field(isiIndex, ISI_MOUNT_TRANSFORM, &streamData);
             if (status != ISI_SUCCESS) {
                 CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: get stream field failed for ISI_MOUNT_TRANSFORM, manipulator  \""
@@ -546,13 +609,15 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                                                                slaveArm->PositionCartesianSetup.Position());
                 }
             }
+
+            // setup joint values for the patient side and endoscopic manipulators
             status = isi_get_stream_field(isiIndex, ISI_SUJ_JOINT_VALUES, &streamData);
             if (status != ISI_SUCCESS) {
                 CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: get stream field failed for ISI_SUJ_JOINT_VALUES, manipulator  \""
                                         << ManipulatorIndexToString(index) << "\", status: "
                                         << mtsIntuitiveDaVinciUtilities::StatusToString(status) << std::endl;
             } else {
-                numberOfJoints = 6;
+                numberOfJoints = ISI_NUM_SUJ_JOINTS;
                 // check size of data
                 if (streamData.count != numberOfJoints) {
                     CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: received wrong number of elements for ISI_SUJ_JOINT_VALUES, manipulator \""
@@ -605,6 +670,9 @@ bool mtsIntuitiveDaVinci::ConfigureEvents(void)
 
 void mtsIntuitiveDaVinci::EventCallback(ManipulatorIndexType manipulatorIndex, int eventId)
 {
+    // trigger the void event using ISI name
+    (Events.VoidFunctions[eventId])->Execute();
+
     prmEventButton buttonPayload;
     switch (eventId) {
         // console events
@@ -615,6 +683,20 @@ void mtsIntuitiveDaVinci::EventCallback(ManipulatorIndexType manipulatorIndex, i
         // reset clutch angles on masters
         this->MasterArms[0]->ClutchRestAngleNeedsUpdate = true;
         this->MasterArms[1]->ClutchRestAngleNeedsUpdate = true;
+        switch (manipulatorIndex) {
+        case MTML1:
+        case MTMR1:
+            this->Consoles[0]->Clutch(buttonPayload);
+            this->Consoles[0]->Clutched = true;
+            break;
+        case MTML2:
+        case MTMR2:
+            this->Consoles[1]->Clutch(buttonPayload);
+            this->Consoles[1]->Clutched = true;
+            break;
+        default:
+            CMN_LOG_CLASS_RUN_WARNING << "EventCallBack: manipulator index not supported for event ISI_API_MASTER_CLUTCH_ON" << std::endl;
+        }
         break;
     case ISI_API_MASTER_CLUTCH_OFF:
         buttonPayload.SetType(prmEventButton::RELEASED);
@@ -625,6 +707,20 @@ void mtsIntuitiveDaVinci::EventCallback(ManipulatorIndexType manipulatorIndex, i
             buttonPayload.SetType(prmEventButton::RELEASED);
             this->Console.MastersAsMice(buttonPayload);
             this->Console.MastersAsMiced = false;
+        }
+        switch (manipulatorIndex) {
+        case MTML1:
+        case MTMR1:
+            this->Consoles[0]->Clutch(buttonPayload);
+            this->Consoles[0]->Clutched = true;
+            break;
+        case MTML2:
+        case MTMR2:
+            this->Consoles[1]->Clutch(buttonPayload);
+            this->Consoles[1]->Clutched = true;
+            break;
+        default:
+            CMN_LOG_CLASS_RUN_WARNING << "EventCallBack: manipulator index not supported for event ISI_API_MASTER_CLUTCH_OFF" << std::endl;
         }
         break;
     case ISI_API_CAMERA_CONTROL_ON:
@@ -730,7 +826,7 @@ void mtsIntuitiveDaVinci::LogManipulatorConfiguration(ManipulatorIndexType index
         return;
     }
     // check the manipulator index
-    if ((index < MTML) || (index > ECM1)) {
+    if ((index < MTML1) || (index > ECM1)) {
         CMN_LOG_CLASS_INIT_ERROR << "LogManipulatorConfiguration: called with incorrect manipulator index" << std::endl;
         return;
     }
@@ -764,7 +860,7 @@ void mtsIntuitiveDaVinci::LogManipulatorsAndToolsConfiguration(cmnLogLevel logLe
     }
     // log for each manipulator
     ManipulatorIndexType manipulatorIndex;
-    for (manipulatorIndex = MTML;
+    for (manipulatorIndex = MTML1;
          manipulatorIndex <= ECM1;
          manipulatorIndex = static_cast<ManipulatorIndexType>(manipulatorIndex + 1)) {
         this->LogManipulatorConfiguration(manipulatorIndex, logLevel);
@@ -780,13 +876,16 @@ void mtsIntuitiveDaVinci::LogManipulatorsAndToolsConfiguration(cmnLogLevel logLe
 const std::string & mtsIntuitiveDaVinci::ManipulatorIndexToString(ManipulatorIndexType manipulatorIndex)
 {
     static const std::string manipulatorStrings[]
-        = {"MTML",
-           "MTMR",
+        = {"MTML1",
+           "MTMR1",
+           "MTML2",
+           "MTMR2",
            "PSM1",
            "PSM2",
            "PSM3",
            "ECM1",
-           "Console"};
+           "Console1",
+           "Console2"};
     static const std::string errorString("InvalidIndex");
     if (manipulatorIndex < NUMBER_MANIPULATORS) {
         return manipulatorStrings[manipulatorIndex];
@@ -797,18 +896,45 @@ const std::string & mtsIntuitiveDaVinci::ManipulatorIndexToString(ManipulatorInd
 
 size_t mtsIntuitiveDaVinci::GetNumberOfJoints(ManipulatorIndexType manipulatorIndex)
 {
-    static const size_t numberOfJoints[]
-        = {8, // MTML
-           8, // MTMR
-           7, // PSM1
-           7, // PSM2
-           7, // PSM3
-           4  // ECM1
-    };
-    if (manipulatorIndex < (NUMBER_MANIPULATORS - 1)) {
-        return numberOfJoints[manipulatorIndex];
+    ManipulatorType manipulatorType = mtsIntuitiveDaVinci::GetManipulatorType(manipulatorIndex);
+    size_t numJoints = 0;
+    switch (manipulatorType) {
+    case MTM_TYPE:
+        numJoints = ISI_NUM_MTM_JOINTS;
+        break;
+    case PSM_TYPE:
+        numJoints = ISI_NUM_PSM_JOINTS;
+        break;
+    case ECM_TYPE:
+        numJoints = ISI_NUM_ECM_JOINTS;
+        break;
+    default:
+        CMN_LOG_RUN_ERROR << " Class mtsIntuitiveDaVinci: GetNumberOfJoints: invalid manipulator type for manipulator index " << manipulatorIndex << std::endl;
     }
-    return 0;
+    return numJoints;
+}
+
+
+mtsIntuitiveDaVinci::ManipulatorType mtsIntuitiveDaVinci::GetManipulatorType(ManipulatorIndexType manipulatorIndex)
+{
+    switch (manipulatorIndex) {
+    case MTML1:
+    case MTMR1:
+    case MTML2:
+    case MTMR2:
+        return MTM_TYPE;
+    case PSM1:
+    case PSM2:
+    case PSM3:
+        return PSM_TYPE;
+    case ECM1:
+        return ECM_TYPE;
+    case CONSOLE1:
+    case CONSOLE2:
+        return CONSOLE_TYPE;
+    default:
+        return static_cast<mtsIntuitiveDaVinci::ManipulatorType> (-1);
+    }
 }
 
 
@@ -821,7 +947,7 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
     size_t numberOfJoints;
     std::string manipulatorName;
     // create data for all arms
-    for (manipulatorIndex = MTML;
+    for (manipulatorIndex = MTML1;
          manipulatorIndex <= ECM1;
          manipulatorIndex = static_cast<ManipulatorIndexType>(manipulatorIndex + 1)) {
         manipulatorName = mtsIntuitiveDaVinci::ManipulatorIndexToString(manipulatorIndex);
@@ -829,8 +955,10 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
                                  << manipulatorName << "\"" << std::endl;
         // create the structure based on arm type
         switch (manipulatorIndex) {
-        case MTML:
-        case MTMR:
+        case MTML1:
+        case MTMR1:
+        case MTML2:
+        case MTMR2:
             arm = new MasterArmData;
             break;
         case PSM1:
@@ -839,9 +967,11 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
         case ECM1:
             arm = new SlaveArmData;
             break;
+        default:
+            CMN_LOG_CLASS_INIT_ERROR << "SetupArmInterfaces: invalid manipulator index" << std::endl;
         }
         CMN_ASSERT(arm);
-        Arms[manipulatorIndex - MTML] = arm;
+        Arms[manipulatorIndex - MTML1] = arm;
         // add a state table using the size of the default state table
         arm->StateTable = new mtsStateTable(this->StateTable.GetHistoryLength(), manipulatorName);
         CMN_ASSERT(arm->StateTable);
@@ -854,6 +984,7 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
         numberOfJoints = mtsIntuitiveDaVinci::GetNumberOfJoints(manipulatorIndex);
         arm->PositionJoint.SetSize(numberOfJoints);
         arm->VelocityJoint.SetSize(numberOfJoints);
+        arm->TorqueJoint.SetSize(numberOfJoints);
         // add to state table and provided interface
         arm->StateTable->AddData(arm->PositionCartesian, "PositionCartesian");
         arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
@@ -867,6 +998,9 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
         arm->StateTable->AddData(arm->VelocityJoint, "VelocityJoint");
         arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
                                                     arm->VelocityJoint, "GetVelocityJoint");
+        arm->StateTable->AddData(arm->TorqueJoint, "TorqueJoint");
+        arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
+                                                    arm->TorqueJoint, "GetTorqueJoint");
     }
 }
 
@@ -877,13 +1011,13 @@ void mtsIntuitiveDaVinci::SetupMastersInterfaces(void)
     ManipulatorIndexType manipulatorIndex;
     MasterArmData * masterArm;
     std::string manipulatorName;
-    for (manipulatorIndex = MTML;
-         manipulatorIndex <= MTMR;
+    for (manipulatorIndex = MTML1;
+         manipulatorIndex <= MTMR2;
          manipulatorIndex = static_cast<ManipulatorIndexType>(manipulatorIndex + 1)) {
         // retrieve point to arm from Arms array
         masterArm = static_cast<MasterArmData *>(this->Arms[manipulatorIndex]);
         CMN_ASSERT(masterArm);
-        MasterArms[manipulatorIndex - MTML] = masterArm;
+        MasterArms[manipulatorIndex - MTML1] = masterArm;
         // events and commands specific to master arms
         manipulatorName = mtsIntuitiveDaVinci::ManipulatorIndexToString(manipulatorIndex);
         // select button interface and event
@@ -901,6 +1035,7 @@ void mtsIntuitiveDaVinci::SetupMastersInterfaces(void)
 void mtsIntuitiveDaVinci::SetupSlavesInterfaces(void)
 {
     CMN_LOG_CLASS_INIT_DEBUG << "SetupSlavesInterfaces: adding slave specific events and commands" << std::endl;
+
     ManipulatorIndexType manipulatorIndex;
     SlaveArmData * slaveArm;
     std::string manipulatorName;
@@ -910,7 +1045,8 @@ void mtsIntuitiveDaVinci::SetupSlavesInterfaces(void)
         // retrieve point to arm from Arms array
         slaveArm = static_cast<SlaveArmData *>(this->Arms[manipulatorIndex]);
         CMN_ASSERT(slaveArm);
-        SlaveArms[manipulatorIndex - MTML] = slaveArm;
+        SlaveArms[manipulatorIndex - PSM1] = slaveArm;
+
         // events and commands specific to slave arms
         // RCM
         slaveArm->StateTable->AddData(slaveArm->PositionCartesianRCM, "PositionCartesianRCM");
@@ -940,7 +1076,7 @@ void mtsIntuitiveDaVinci::SetupCameraInterfaces(void)
         // retrieve point to arm from Arms array
         cameraArm = static_cast<SlaveArmData *>(this->Arms[manipulatorIndex]);
         CMN_ASSERT(cameraArm);
-        CameraArms[manipulatorIndex - MTML] = cameraArm;
+        CameraArms[manipulatorIndex - ECM1] = cameraArm;
         // events and commands specific to camera arms
         // this is a placeholder, I am not sure we will ever need it
     }
@@ -951,6 +1087,7 @@ void mtsIntuitiveDaVinci::SetupConsoleInterfaces(void)
 {
     Console.ProvidedInterface = this->AddInterfaceProvided("Console");
     CMN_ASSERT(Console.ProvidedInterface);
+
     Console.ProvidedInterface->AddEventVoid(Console.HeadIn, "HeadIn");
     Console.ProvidedInterface->AddEventVoid(Console.HeadOut, "HeadOut");
     Console.ProvidedInterface->AddEventVoid(Console.ClutchQuickTap, "ClutchQuickTap");
@@ -979,11 +1116,51 @@ void mtsIntuitiveDaVinci::SetupConsoleInterfaces(void)
     Console.FollowModeProvidedInterface = this->AddInterfaceProvided("FollowMode");
     CMN_ASSERT(Console.FollowModeProvidedInterface);
     Console.FollowModeProvidedInterface->AddEventWrite(Console.FollowMode, "Button", prmEventButton());
+
+    ManipulatorIndexType manipulatorIndex;
+    ConsoleData* console;
+    std::string manipulatorName;
+    for (manipulatorIndex = CONSOLE1;
+         manipulatorIndex <= CONSOLE2;
+         manipulatorIndex = static_cast<ManipulatorIndexType>(manipulatorIndex + 1)) {
+
+        manipulatorName = mtsIntuitiveDaVinci::ManipulatorIndexToString(manipulatorIndex);
+        console = new ConsoleData();
+        CMN_ASSERT(console);
+        Consoles[manipulatorIndex - CONSOLE1] = console;
+        console->ProvidedInterface = this->AddInterfaceProvided(manipulatorName);
+        CMN_ASSERT(console->ProvidedInterface);
+
+        console->ProvidedInterface->AddEventVoid(console->HeadIn, "HeadIn");
+        console->ProvidedInterface->AddEventVoid(console->HeadOut, "HeadOut");
+        console->ProvidedInterface->AddEventVoid(console->ClutchQuickTap, "ClutchQuickTap");
+        console->ProvidedInterface->AddEventVoid(console->CameraQuickTap, "CameraQuickTap");
+    }
+}
+
+
+void mtsIntuitiveDaVinci::SetupEventInterfaces(void)
+{
+    Events.ProvidedInterface = this->AddInterfaceProvided("Events");
+    CMN_ASSERT(Events.ProvidedInterface);
+
+    Events.VoidFunctions.SetSize(NUM_EVENT_IDS);
+    Events.VoidFunctions.SetAll(0);
+    Events.EventNames.SetSize(NUM_EVENT_IDS);
+    Events.EventNames.SetAll("");
+
+    for (size_t i = 0; i < Events.VoidFunctions.size(); i++) {
+        Events.EventNames[i] = isi_get_event_name(static_cast<ISI_EVENT_ID>(i));
+        Events.VoidFunctions[i] = new mtsFunctionVoid();
+        Events.ProvidedInterface->AddEventVoid(*(Events.VoidFunctions[i]), Events.EventNames[i]);
+    }
+
 }
 
 
 void mtsIntuitiveDaVinci::SetupAllInterfaces(void)
 {
+    this->SetupEventInterfaces();
     // this must be called first
     this->SetupArmsInterfaces();
     // arm specific extra data

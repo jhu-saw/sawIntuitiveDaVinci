@@ -72,7 +72,7 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
 public:
 
     /*! Constructor.*/
-    mtsIntuitiveDaVinci(const std::string & name, unsigned int rateInHz);
+    mtsIntuitiveDaVinci(const std::string & name, unsigned int rateInHz, const char * ipaddress = "10.0.0.5", unsigned int port = 5002, unsigned int password = 0x1111);
 
     /*! Default destructor. Does nothing. */
     ~mtsIntuitiveDaVinci();
@@ -90,15 +90,26 @@ public:
     /*! Type of manipulator.  Note that indices are contiguous by type
       of manipulator. */
     typedef enum {
-        MTML = 0,           /*! Master Left */
-        MTMR,               /*! Master Right */
+        MTML1 = 0,          /*! Master Left 1*/
+        MTMR1,              /*! Master Right 1*/
+        MTML2,              /*! Master Left 2*/
+        MTMR2,              /*! Master Right 2*/
         PSM1,               /*! Patient side 1 */
         PSM2,               /*! Patient side 2 */
         PSM3,               /*! Patient side 3 */
-        ECM1,                /*! Endoscopic camera */
-        CONSOLE,            /*! Console */
+        ECM1,               /*! Endoscopic camera */
+        CONSOLE1,           /*! Console */
+        CONSOLE2,
         NUMBER_MANIPULATORS /*! Number of manipulators */
     } ManipulatorIndexType;
+
+    typedef enum {
+        MTM_TYPE = 0,                    /*! Master Tool Manipulator */
+        PSM_TYPE,                        /*! Patient Side Manipulator */
+        ECM_TYPE,                        /*! Endoscopic Camera Manipulator */
+        CONSOLE_TYPE,                    /*! Surgeon-Side Console */
+        NUMBER_MANIPULATOR_TYPES         /*! Number of manipulator types */
+    } ManipulatorType;
 
 protected:
 
@@ -112,6 +123,7 @@ protected:
         prmVelocityCartesianGet VelocityCartesian;
         prmPositionJointGet PositionJoint;
         prmVelocityJointGet VelocityJoint;
+        prmVelocityJointGet TorqueJoint;
     };
 
     /*! Class to contain the data specific to the master arms */
@@ -171,20 +183,32 @@ protected:
         mtsFunctionWrite FollowMode;
     };
 
+    class EventData {
+    public:
+        EventData(void);
+        mtsInterfaceProvided * ProvidedInterface;
+        vctDynamicVector<mtsFunctionVoid *> VoidFunctions;
+        vctDynamicVector<std::string> EventNames;
+    };
+
     /*! Info for all arms, this container is the primary one */
-    ArmData * Arms[(ECM1 - MTML) + 1];
+    ArmData * Arms[(ECM1 - MTML1) + 1];
 
     /*! Info for all master arms, different way to access masters only */
-    MasterArmData * MasterArms[(MTMR - MTML) + 1];
+    MasterArmData * MasterArms[(MTMR2 - MTML1) + 1];
 
     /*! Info for all slave arms, including camera */
     SlaveArmData * SlaveArms[(ECM1 - PSM1) + 1];
 
     /*! Camera arm ECM1 */
-    SlaveArmData * CameraArms[1];
+    SlaveArmData * CameraArms[(ECM1 - ECM1) + 1];
 
     /*! Console data */
     ConsoleData Console;
+    ConsoleData * Consoles[(CONSOLE2 - CONSOLE1) + 1];
+
+    /*! Event data */
+    EventData Events;
 
     /*! Connect to the daVinci system. */
     bool Connect(void);
@@ -210,14 +234,20 @@ protected:
                               cmnLogLevel logLevel = CMN_LOG_LOD_INIT_VERBOSE) const;
     void LogManipulatorsAndToolsConfiguration(cmnLogLevel logLevel = CMN_LOG_LOD_INIT_VERBOSE) const;
 
+public:
     /*! Conversion from manipulator index to string */
     static const std::string & ManipulatorIndexToString(ManipulatorIndexType manipulatorIndex);
 
     /*! Get number of joints per arm */
     static size_t GetNumberOfJoints(ManipulatorIndexType manipulatorIndex);
 
+    /*! Get manipulator type from manipulator index */
+    static ManipulatorType GetManipulatorType(ManipulatorIndexType manipulatorIndex);
+
+protected:
     /*! Setup all interfaces and populate them with commands and events */
     //@{
+    void SetupEventInterfaces(void);
     void SetupArmsInterfaces(void);
     void SetupMastersInterfaces(void);
     void SetupSlavesInterfaces(void);
@@ -229,6 +259,9 @@ protected:
     bool Connected;
 
     unsigned int RateInHz;
+    std::string IPAddress;
+    unsigned int Port;
+    unsigned int Password;
 };
 
 
