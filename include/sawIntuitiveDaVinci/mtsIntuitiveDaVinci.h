@@ -69,7 +69,7 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
     friend void mtsIntuitiveDaVinciUtilities::EventCallbackInternal(int manipulatorId,
                                                                     int eventId,
                                                                     void * userData);
-public:
+ public:
 
     /*! Constructor.*/
     mtsIntuitiveDaVinci(const std::string & name, unsigned int rateInHz, const char * ipaddress = "10.0.0.5", unsigned int port = 5002, unsigned int password = 0x1111);
@@ -111,7 +111,7 @@ public:
         NUMBER_MANIPULATOR_TYPES         /*! Number of manipulator types */
     } ManipulatorType;
 
-protected:
+ protected:
 
     /*! Class to contain the data common to all arms */
     class ArmData {
@@ -234,7 +234,7 @@ protected:
                               cmnLogLevel logLevel = CMN_LOG_LOD_INIT_VERBOSE) const;
     void LogManipulatorsAndToolsConfiguration(cmnLogLevel logLevel = CMN_LOG_LOD_INIT_VERBOSE) const;
 
-public:
+ public:
     /*! Conversion from manipulator index to string */
     static const std::string & ManipulatorIndexToString(ManipulatorIndexType manipulatorIndex);
 
@@ -244,7 +244,11 @@ public:
     /*! Get manipulator type from manipulator index */
     static ManipulatorType GetManipulatorType(ManipulatorIndexType manipulatorIndex);
 
-protected:
+    inline vctDynamicVector<std::string> GetEventNames(void) {
+        return this->Events.EventNames;
+    }
+
+ protected:
     /*! Setup all interfaces and populate them with commands and events */
     //@{
     void SetupEventInterfaces(void);
