@@ -72,10 +72,13 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
  public:
 
     /*! Constructor.*/
-    mtsIntuitiveDaVinci(const std::string & name, unsigned int rateInHz, const char * ipaddress = "10.0.0.5", unsigned int port = 5002, unsigned int password = 0x1111);
+     mtsIntuitiveDaVinci(const std::string & name, unsigned int rateInHz);
 
     /*! Default destructor. Does nothing. */
     ~mtsIntuitiveDaVinci();
+
+    void SetSourceHost(const std::string _ipaddress, const unsigned int _port = 5002, const unsigned int _password = 0x1111);
+    void SetSourceLogFile(const std::string _filename);
 
     void Configure(const std::string & CMN_UNUSED(filename) = "") {};
     void Startup(void);
@@ -266,6 +269,8 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
     std::string IPAddress;
     unsigned int Port;
     unsigned int Password;
+    std::string LogFileName;
+    bool UseLogFile;
 };
 
 

@@ -247,15 +247,12 @@ mtsIntuitiveDaVinci::EventData::EventData(void):
 CMN_IMPLEMENT_SERVICES(mtsIntuitiveDaVinci);
 
 
-mtsIntuitiveDaVinci::mtsIntuitiveDaVinci(const std::string & name, unsigned int rateInHz,
-                                         const char * ipaddress, unsigned int port, unsigned int password):
+mtsIntuitiveDaVinci::mtsIntuitiveDaVinci(const std::string & name, unsigned int rateInHz):
     mtsTaskPeriodic(name, 10 * cmn_ms), //TaskFromSignal(name),
     Connected(false),
-    RateInHz(rateInHz),
-    IPAddress(ipaddress),
-    Port(port),
-    Password(password)
+    RateInHz(rateInHz)
 {
+    this->SetSourceHost("10.0.0.5");
     this->SetupAllInterfaces();
 }
 
@@ -264,6 +261,19 @@ mtsIntuitiveDaVinci::~mtsIntuitiveDaVinci()
 {
 }
 
+void mtsIntuitiveDaVinci::SetSourceHost(const std::string _ipaddress, const unsigned int _port, const unsigned int _password)
+{
+    UseLogFile = false;
+    IPAddress = _ipaddress;
+    Port = _port;
+    Password = _password;
+}
+
+void mtsIntuitiveDaVinci::SetSourceLogFile(const std::string _filename)
+{
+    UseLogFile = true;
+    LogFileName = _filename;
+}
 
 void mtsIntuitiveDaVinci::Startup(void)
 {
@@ -311,7 +321,12 @@ void mtsIntuitiveDaVinci::Cleanup(void)
 bool mtsIntuitiveDaVinci::Connect(void)
 {
     ISI_STATUS status;
-    status = isi_connect_ex(IPAddress.c_str(), Port, Password);
+    if (!UseLogFile) {
+        status = isi_connect_ex(IPAddress.c_str(), Port, Password);
+    }
+    else {
+        status = isi_connect_log(LogFileName.c_str());
+    }
     if (status != ISI_SUCCESS) {
         CMN_LOG_CLASS_INIT_ERROR << "Connect: connection failed for \"" << this->GetName()
                                  << "\", status: "
