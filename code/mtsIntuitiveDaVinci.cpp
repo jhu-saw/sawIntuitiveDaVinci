@@ -412,6 +412,7 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                                     << ManipulatorIndexToString(index) << "\", status: "
                                     << mtsIntuitiveDaVinciUtilities::StatusToString(status) << std::endl;
         } else {
+            std::cout << "Timestamp Joints: " << std::fixed << streamData.timestamp << std::endl;
             numberOfJoints = GetNumberOfJoints(index);
             // check size of data
             if (streamData.count != numberOfJoints) {
@@ -1158,7 +1159,7 @@ void mtsIntuitiveDaVinci::SetupEventInterfaces(void)
     Events.EventNames.SetSize(NUM_EVENT_IDS);
     Events.EventNames.SetAll("");
 
-    for (size_t i = 0; i < Events.VoidFunctions.size(); i++) {
+    for (size_t i = 0; i < Events.WriteFunctions.size(); i++) {
         Events.EventNames[i] = isi_get_event_name(static_cast<ISI_EVENT_ID>(i));
         Events.WriteFunctions[i] = new mtsFunctionWrite();
         Events.ProvidedInterface->AddEventWrite(*(Events.WriteFunctions[i]), Events.EventNames[i], mtsStdString());
