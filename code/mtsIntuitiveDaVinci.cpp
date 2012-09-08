@@ -92,12 +92,6 @@ namespace mtsIntuitiveDaVinciUtilities
     }
 
 
-    std::string GetManipulatorName(mtsIntuitiveDaVinci::ManipulatorIndexType index)
-    {
-        return isi_get_manip_name(ManipulatorIndexToISI(index));
-    }
-
-
     std::string StatusToString(ISI_STATUS status)
     {
         switch (status) {
@@ -686,7 +680,7 @@ bool mtsIntuitiveDaVinci::ConfigureEvents(void)
 void mtsIntuitiveDaVinci::EventCallback(ManipulatorIndexType manipulatorIndex, int eventId)
 {
     // trigger the void event using ISI name
-    (Events.VoidFunctions[eventId])->Execute();
+    (Events.WriteFunctions[eventId])->Execute(static_cast<mtsStdString>(ManipulatorIndexToString(manipulatorIndex)));
 
     prmEventButton buttonPayload;
     switch (eventId) {
@@ -1159,15 +1153,15 @@ void mtsIntuitiveDaVinci::SetupEventInterfaces(void)
     Events.ProvidedInterface = this->AddInterfaceProvided("Events");
     CMN_ASSERT(Events.ProvidedInterface);
 
-    Events.VoidFunctions.SetSize(NUM_EVENT_IDS);
-    Events.VoidFunctions.SetAll(0);
+    Events.WriteFunctions.SetSize(NUM_EVENT_IDS);
+    Events.WriteFunctions.SetAll(0);
     Events.EventNames.SetSize(NUM_EVENT_IDS);
     Events.EventNames.SetAll("");
 
     for (size_t i = 0; i < Events.VoidFunctions.size(); i++) {
         Events.EventNames[i] = isi_get_event_name(static_cast<ISI_EVENT_ID>(i));
-        Events.VoidFunctions[i] = new mtsFunctionVoid();
-        Events.ProvidedInterface->AddEventVoid(*(Events.VoidFunctions[i]), Events.EventNames[i]);
+        Events.WriteFunctions[i] = new mtsFunctionWrite();
+        Events.ProvidedInterface->AddEventWrite(*(Events.WriteFunctions[i]), Events.EventNames[i], mtsStdString());
     }
 
 }

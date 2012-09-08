@@ -190,7 +190,7 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
     public:
         EventData(void);
         mtsInterfaceProvided * ProvidedInterface;
-        vctDynamicVector<mtsFunctionVoid *> VoidFunctions;
+        vctDynamicVector<mtsFunctionWrite *> WriteFunctions;
         vctDynamicVector<std::string> EventNames;
     };
 
