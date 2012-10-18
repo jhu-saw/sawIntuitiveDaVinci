@@ -122,6 +122,7 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
         ArmData(void);
         mtsStateTable * StateTable;
         mtsInterfaceProvided * ProvidedInterface;
+        mtsFloat DeviceTimestamp;
         prmPositionCartesianGet PositionCartesian;
         prmVelocityCartesianGet VelocityCartesian;
         prmPositionJointGet PositionJoint;
