@@ -213,7 +213,7 @@ public:
         providedInterface->AddObserver("Button", cbMastersAsMice);
 
         // MaM clutches
-        providedInterface = component->GetInterfaceProvided("MTMLClutch");
+        providedInterface = component->GetInterfaceProvided("MTML1Clutch");
         if (!providedInterface) {
             CMN_LOG_INIT_ERROR << "Could not find daVinci MTMLClutch" << std::endl;
             return false;
@@ -221,7 +221,7 @@ public:
         cbMTMLClutch = MakeCommandWrite(&MyCallBacks::mtm_left_clutch_callback,
                                         this, "MTMLClutch", prmEventButton());
         providedInterface->AddObserver("Button", cbMTMLClutch);
-        providedInterface = component->GetInterfaceProvided("MTMRClutch");
+        providedInterface = component->GetInterfaceProvided("MTMR1Clutch");
         if (!providedInterface) {
             CMN_LOG_INIT_ERROR << "Could not find daVinci MTMRClutch" << std::endl;
             return false;
@@ -231,7 +231,7 @@ public:
         providedInterface->AddObserver("Button", cbMTMRClutch);
 
         // MTML button interface
-        providedInterface = component->GetInterfaceProvided("MTMLSelect");
+        providedInterface = component->GetInterfaceProvided("MTML1Select");
 
         if (!providedInterface) {
             CMN_LOG_INIT_ERROR << "Could not find daVinci MTMLSelect" << std::endl;
@@ -242,9 +242,9 @@ public:
         providedInterface->AddObserver("Button", cbMTMLeftButton);
 
         // MTMR button interface
-        providedInterface = component->GetInterfaceProvided("MTMRSelect");
+        providedInterface = component->GetInterfaceProvided("MTMR1Select");
         if (!providedInterface) {
-            CMN_LOG_INIT_ERROR << "Could not find daVinci MTMRSelct" << std::endl;
+            CMN_LOG_INIT_ERROR << "Could not find daVinci MTMRSelect" << std::endl;
             return false;
         }
         cbMTMRightButton = MakeCommandWrite(&MyCallBacks::mtm_right_button_callback,
@@ -338,12 +338,12 @@ int main()
         CMN_LOG_INIT_ERROR << "Could not find daVinci ECM1" << std::endl;
         return -1;
     }
-    mtsInterfaceProvided * MTMR_Interface = daVinci->GetInterfaceProvided("MTMR");
+    mtsInterfaceProvided * MTMR_Interface = daVinci->GetInterfaceProvided("MTMR1");
     if (!MTMR_Interface) {
         CMN_LOG_INIT_ERROR << "Could not find daVinci MTMR" << std::endl;
         return -1;
     }
-    mtsInterfaceProvided * MTML_Interface = daVinci->GetInterfaceProvided("MTML");
+    mtsInterfaceProvided * MTML_Interface = daVinci->GetInterfaceProvided("MTML1");
     if (!MTML_Interface) {
         CMN_LOG_INIT_ERROR << "Could not find daVinci MTML" << std::endl;
         return -1;
