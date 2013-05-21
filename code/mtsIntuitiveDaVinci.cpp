@@ -926,6 +926,24 @@ size_t mtsIntuitiveDaVinci::GetNumberOfJoints(ManipulatorIndexType manipulatorIn
     return numJoints;
 }
 
+size_t mtsIntuitiveDaVinci::GetNumberOfSetupJoints(ManipulatorIndexType manipulatorIndex)
+{
+    ManipulatorType manipulatorType = mtsIntuitiveDaVinci::GetManipulatorType(manipulatorIndex);
+    size_t numSetupJoints = -1;
+    switch (manipulatorType) {
+        case MTM_TYPE:
+            numSetupJoints = 0;
+            break;
+        case ECM_TYPE:
+        case PSM_TYPE:
+            numSetupJoints = ISI_NUM_SUJ_JOINTS;
+            break;
+        default:
+            CMN_LOG_INIT_ERROR << "Class mtsIntuitiveDaVinci: GetNumberOfSetupJoints: invalid manipulator type: " << manipulatorIndex << "  " << std::endl;
+            break;
+    }
+    return numSetupJoints;
+}
 
 mtsIntuitiveDaVinci::ManipulatorType mtsIntuitiveDaVinci::GetManipulatorType(ManipulatorIndexType manipulatorIndex)
 {

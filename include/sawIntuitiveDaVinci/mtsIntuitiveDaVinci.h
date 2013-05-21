@@ -245,6 +245,9 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
     /*! Get number of joints per arm */
     static size_t GetNumberOfJoints(ManipulatorIndexType manipulatorIndex);
 
+    /*! Get number of setup joints for the specified manipulator index */
+    static size_t GetNumberOfSetupJoints(ManipulatorIndexType manipulatorIndex);
+
     /*! Get manipulator type from manipulator index */
     static ManipulatorType GetManipulatorType(ManipulatorIndexType manipulatorIndex);
 
