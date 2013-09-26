@@ -79,6 +79,12 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
 
     void SetSourceHost(const std::string _ipaddress, const unsigned int _port = 5002, const unsigned int _password = 0x1111);
     void SetSourceLogFile(const std::string _filename);
+    /*! Set filename to log the API to in the bin format */
+    void SetOutputLogFile(const std::string filename);
+    /*! Start logging to bin file. */
+    void StartLogging(void);
+    /*! Stop logging to bin file. */
+    void StopLogging(void);
 
     void Configure(const std::string & CMN_UNUSED(filename) = "") {};
     void Startup(void);
@@ -273,8 +279,9 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
     std::string IPAddress;
     unsigned int Port;
     unsigned int Password;
-    std::string LogFileName;
+    std::string SourceLogFileName;
     bool UseLogFile;
+    std::string OutputLogFileName;
 };
 
 

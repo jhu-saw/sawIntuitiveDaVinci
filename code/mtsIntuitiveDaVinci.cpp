@@ -266,8 +266,17 @@ void mtsIntuitiveDaVinci::SetSourceHost(const std::string _ipaddress, const unsi
 void mtsIntuitiveDaVinci::SetSourceLogFile(const std::string _filename)
 {
     UseLogFile = true;
-    LogFileName = _filename;
+    SourceLogFileName = _filename;
 }
+
+void mtsIntuitiveDaVinci::SetOutputLogFile(const std::string filename)
+{
+    OutputLogFileName = filename;
+}
+
+void mtsIntuitiveDaVinci::StartLogging() { isi_start_logging(OutputLogFileName.c_str());}
+
+void mtsIntuitiveDaVinci::StopLogging() { isi_stop_logging();}
 
 void mtsIntuitiveDaVinci::Startup(void)
 {
@@ -319,7 +328,7 @@ bool mtsIntuitiveDaVinci::Connect(void)
         status = isi_connect_ex(IPAddress.c_str(), Port, Password);
     }
     else {
-        status = isi_connect_log(LogFileName.c_str());
+        status = isi_connect_log(SourceLogFileName.c_str());
     }
     if (status != ISI_SUCCESS) {
         CMN_LOG_CLASS_INIT_ERROR << "Connect: connection failed for \"" << this->GetName()
