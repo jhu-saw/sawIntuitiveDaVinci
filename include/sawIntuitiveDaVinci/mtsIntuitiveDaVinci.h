@@ -57,6 +57,7 @@ namespace mtsIntuitiveDaVinciUtilities {
     void StreamCallbackInternal(void * userData);
     void EventCallbackInternal(int manipulatorId,
                                int eventId,
+                               int* arguments,
                                void * userData);
 };
 
@@ -68,6 +69,7 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
     friend void mtsIntuitiveDaVinciUtilities::StreamCallbackInternal(void * userData);
     friend void mtsIntuitiveDaVinciUtilities::EventCallbackInternal(int manipulatorId,
                                                                     int eventId,
+                                                                    int* arguments,
                                                                     void * userData);
  public:
 
@@ -108,7 +110,8 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
         PSM3,               /*! Patient side 3 */
         ECM1,               /*! Endoscopic camera */
         CONSOLE1,           /*! Console */
-        CONSOLE2,
+        CONSOLE2,           /*! Dual Console */
+        CORE,               /*! In Si system events are generated from Core as well */
         NUMBER_MANIPULATORS /*! Number of manipulators */
     } ManipulatorIndexType;
 
@@ -230,7 +233,7 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
     void StreamCallback(void);
 
     bool ConfigureEvents(void);
-    void EventCallback(ManipulatorIndexType index, int eventId);
+    void EventCallback(ManipulatorIndexType index, int eventId, int* eventArgs);
 
     bool StartStream(void);
 

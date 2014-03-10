@@ -55,6 +55,8 @@ namespace mtsIntuitiveDaVinciUtilities
             return ISI_CONSOLE1;
         case mtsIntuitiveDaVinci::CONSOLE2:
             return ISI_CONSOLE2;
+        case mtsIntuitiveDaVinci::CORE:
+            return ISI_CORE;
         default:
             CMN_LOG_RUN_WARNING << "mtsIntuitiveDaVinciUtilities::ManipulatorIndexToISI: index out of range" << std::endl;
         }
@@ -85,6 +87,8 @@ namespace mtsIntuitiveDaVinciUtilities
             return mtsIntuitiveDaVinci::CONSOLE1;
         case ISI_CONSOLE2:
             return mtsIntuitiveDaVinci::CONSOLE2;
+        case ISI_CORE:
+            return mtsIntuitiveDaVinci::CORE;
         default:
             CMN_LOG_RUN_WARNING << "mtsIntuitiveDaVinciUtilities::ManipulatorIndexToISI: index out of range" << std::endl;
         }
@@ -146,15 +150,16 @@ namespace mtsIntuitiveDaVinciUtilities
 
     void ISICALLBACK EventCallback(ISI_MANIP_INDEX isiManipulatorIndex,
                                    ISI_EVENT_ID eventId,
-                                   ISI_INT CMN_UNUSED(arguments[ISI_NUM_EVENT_ARGS]), // introduced in isi_api 1.0.5
+                                   ISI_INT (arguments[ISI_NUM_EVENT_ARGS]),
                                    void * userData)
     {
-        EventCallbackInternal(isiManipulatorIndex, eventId, userData);
+        EventCallbackInternal(isiManipulatorIndex, eventId, arguments, userData);
     }
 
 
     void EventCallbackInternal(int isiManipulatorIndex,
                                int eventId,
+                               int * eventArgs,
                                void * userData)
     {
         // convert userData pointer
@@ -164,7 +169,7 @@ namespace mtsIntuitiveDaVinciUtilities
         // convert ISI manipulator index
         mtsIntuitiveDaVinci::ManipulatorIndexType manipulatorIndex =
             mtsIntuitiveDaVinciUtilities::ManipulatorIndexFromISI(ISI_MANIP_INDEX(isiManipulatorIndex));
-        instance->EventCallback(manipulatorIndex, eventId);
+        instance->EventCallback(manipulatorIndex, eventId, eventArgs);
     }
 
 
@@ -689,10 +694,25 @@ bool mtsIntuitiveDaVinci::ConfigureEvents(void)
 }
 
 
-void mtsIntuitiveDaVinci::EventCallback(ManipulatorIndexType manipulatorIndex, int eventId)
+void mtsIntuitiveDaVinci::EventCallback(ManipulatorIndexType manipulatorIndex, int eventId, int* eventArgs)
 {
     // trigger the void event using ISI name
-    (Events.WriteFunctions[eventId])->Execute(static_cast<mtsStdString>(ManipulatorIndexToString(manipulatorIndex)));
+    std::vector<std::string> v;
+    // manipulator source of the event
+    v.push_back(ManipulatorIndexToString(manipulatorIndex));
+    // event name
+    v.push_back(Events.EventNames[eventId]);
+    // event arguments
+    char temp[50];
+    sprintf(temp, "%d", eventArgs[0]);
+    v.push_back(std::string(temp));
+    sprintf(temp, "%d", eventArgs[1]);
+    v.push_back(std::string(temp));
+    sprintf(temp, "%d", eventArgs[2]);
+    v.push_back(std::string(temp));
+    sprintf(temp, "%d", eventArgs[3]);
+    v.push_back(std::string(temp));
+    (Events.WriteFunctions[eventId])->Execute(v);
 
     prmEventButton buttonPayload;
     switch (eventId) {
@@ -906,7 +926,8 @@ const std::string & mtsIntuitiveDaVinci::ManipulatorIndexToString(ManipulatorInd
            "PSM3",
            "ECM1",
            "Console1",
-           "Console2"};
+           "Console2",
+           "Core"};
     static const std::string errorString("InvalidIndex");
     if (manipulatorIndex < NUMBER_MANIPULATORS) {
         return manipulatorStrings[manipulatorIndex];
@@ -1194,7 +1215,7 @@ void mtsIntuitiveDaVinci::SetupEventInterfaces(void)
     for (size_t i = 0; i < Events.WriteFunctions.size(); i++) {
         Events.EventNames[i] = isi_get_event_name(static_cast<ISI_EVENT_ID>(i));
         Events.WriteFunctions[i] = new mtsFunctionWrite();
-        Events.ProvidedInterface->AddEventWrite(*(Events.WriteFunctions[i]), Events.EventNames[i], mtsStdString());
+        Events.ProvidedInterface->AddEventWrite(*(Events.WriteFunctions[i]), Events.EventNames[i], std::vector<std::string>());
     }
 
 }
