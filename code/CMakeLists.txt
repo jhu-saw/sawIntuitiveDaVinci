@@ -34,7 +34,12 @@ if (cisst_FOUND)
   if (isi_api_FOUND)
 
     set (sawIntuitiveDaVinci_INCLUDE_DIR "${sawIntuitiveDaVinci_SOURCE_DIR}/include")
-    set (sawIntuitiveDaVinci_LIBRARY_DIR "${LIBRARY_OUTPUT_PATH}")
+    
+    if ("${LIBRARY_OUTPUT_PATH}" STREQUAL "")
+      set (sawIntuitiveDaVinci_LIBRARY_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+    else ()
+      set (sawIntuitiveDaVinci_LIBRARY_DIR "${LIBRARY_OUTPUT_PATH}")
+    endif ()
     set (sawIntuitiveDaVinci_LIBRARIES sawIntuitiveDaVinci "${isi_api_LIBRARIES}")
 
     include_directories ("${sawIntuitiveDaVinci_INCLUDE_DIR}" "${isi_api_INCLUDE_DIR}")
