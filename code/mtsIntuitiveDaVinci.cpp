@@ -659,6 +659,8 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
         }
         // advance state table for this arm
         arm->StateTable->Advance();
+        // trigger event to indicate new data stream available
+        arm->DataUpdated();
     }
 
 }
@@ -1039,6 +1041,8 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
         // add a provided interface
         arm->ProvidedInterface = this->AddInterfaceProvided(manipulatorName);
         CMN_ASSERT(arm->ProvidedInterface);
+        // add a void event to indicate new stream of data has been captured
+        arm->ProvidedInterface->AddEventVoid(arm->DataUpdated, "DataUpdated");
         // resize containers for joint information
         numberOfJoints = mtsIntuitiveDaVinci::GetNumberOfJoints(manipulatorIndex);
         arm->PositionJoint.SetSize(numberOfJoints);
