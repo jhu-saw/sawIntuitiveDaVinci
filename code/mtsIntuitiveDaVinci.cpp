@@ -1067,6 +1067,9 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
         arm->StateTable->AddData(arm->TorqueJoint, "TorqueJoint");
         arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
                                                     arm->TorqueJoint, "GetTorqueJoint");
+        arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
+                                                    arm->StateTable->PeriodStats,
+                                                    "GetPeriodStatistics");
     }
 }
 

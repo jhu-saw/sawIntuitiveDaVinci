@@ -15,5 +15,4 @@
 #
 # --- end cisst license ---
 
-add_subdirectory (console)
 add_subdirectory (Qt)

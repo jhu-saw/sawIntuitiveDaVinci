@@ -53,6 +53,9 @@ if (cisst_FOUND)
                            ${isi_api_LIBRARIES})
     cisst_target_link_libraries (sawIntuitiveDaVinci ${REQUIRED_CISST_LIBRARIES})
 
+    # add Qt code
+    add_subdirectory (Qt)
+    set (sawIntuitiveDaVinci_LIBRARIES ${sawIntuitiveDaVinci_LIBRARIES} ${sawIntuitiveDaVinciQt_LIBRARIES})
 
     configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/sawIntuitiveDaVinciConfig.cmake.in"
                     "${sawIntuitiveDaVinci_BINARY_DIR}/sawIntuitiveDaVinciConfig.cmake"
