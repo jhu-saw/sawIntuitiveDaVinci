@@ -24,6 +24,7 @@ http://www.cisst.org/cisst/license.txt.
 // cisst/saw
 #include <cisstCommon/cmnCommandLineOptions.h>
 #include <cisstMultiTask/mtsQtApplication.h>
+#include <cisstParameterTypes/prmQtWidgetEventButtonsComponent.h>
 #include <sawIntuitiveDaVinci/mtsIntuitiveDaVinci.h>
 #include <sawIntuitiveDaVinci/mtsIntuitiveDaVinciArmQtWidget.h>
 
@@ -102,6 +103,31 @@ int main(int argc, char ** argv)
                                   daVinci->GetName(), iter->first);
         tabWidget->addTab(iter->second, iter->first.c_str());
     }
+
+    // Event (Buttons only)
+    std::vector<std::string> buttons;
+    buttons.push_back("MTML1Select");
+    buttons.push_back("MTML1Clutch");
+    buttons.push_back("MTMR1Select");
+    buttons.push_back("MTMR1Clutch");
+    buttons.push_back("Standby");
+    buttons.push_back("Ready");
+    buttons.push_back("Clutch");
+    buttons.push_back("Camera");
+    buttons.push_back("FollowMode");
+    buttons.push_back("MastersAsMice");
+
+    prmQtWidgetEventButtonsComponent * buttonsGUI = new prmQtWidgetEventButtonsComponent("Buttons");
+    componentManager->AddComponent(buttonsGUI);
+    buttonsGUI->SetNumberOfColumns(4);
+    for (size_t index = 0;
+         index < buttons.size();
+         ++index) {
+        buttonsGUI->AddEventButton(buttons[index]);
+        componentManager->Connect(buttonsGUI->GetName(), buttons[index],
+                                  daVinci->GetName(), buttons[index]);
+    }
+    tabWidget->addTab(buttonsGUI, "Buttons");
 
     tabWidget->show();
 
