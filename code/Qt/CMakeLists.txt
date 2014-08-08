@@ -46,6 +46,7 @@ if (cisst_FOUND_AS_REQUIRED)
   cisst_target_link_libraries (sawIntuitiveDaVinciQt ${REQUIRED_CISST_LIBRARIES})
 
   # make sure the new library is known by the parent folder to add to the config file
+  set (sawIntuitiveDaVinciQt_LIBRARY_DIR "${CMAKE_CURRENT_BINARY_DIR}" PARENT_SCOPE)
   set (sawIntuitiveDaVinciQt_LIBRARIES sawIntuitiveDaVinciQt PARENT_SCOPE)
 
 else (cisst_FOUND_AS_REQUIRED)

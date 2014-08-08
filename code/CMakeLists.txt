@@ -55,6 +55,7 @@ if (cisst_FOUND)
 
     # add Qt code
     add_subdirectory (Qt)
+	set (sawIntuitiveDaVinci_LIBRARY_DIR ${sawIntuitiveDaVinci_LIBRARY_DIR} ${sawIntuitiveDaVinciQt_LIBRARY_DIR})
     set (sawIntuitiveDaVinci_LIBRARIES ${sawIntuitiveDaVinci_LIBRARIES} ${sawIntuitiveDaVinciQt_LIBRARIES})
 
     configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/sawIntuitiveDaVinciConfig.cmake.in"
