@@ -1,8 +1,5 @@
 #
-# $Id: CMakeLists.txt 3537 2012-03-13 02:58:25Z adeguet1 $
-#
-# (C) Copyright 2009-2012 Johns Hopkins University (JHU), All Rights
-# Reserved.
+# (C) Copyright 2009-2015 Johns Hopkins University (JHU), All Rights Reserved.
 #
 # --- begin cisst license - do not edit ---
 #
@@ -33,19 +30,6 @@ if (cisst_FOUND_AS_REQUIRED)
     # sawIntuitiveDaVinci configuration
     include_directories (${sawIntuitiveDaVinci_INCLUDE_DIR})
     link_directories (${sawIntuitiveDaVinci_LIBRARY_DIR})
-
-    # name the main executable and specifies with source files to use
-    add_executable (sawIntuitiveDaVinciExampleQt
-                    main.cpp
-                    )
-    set_property (TARGET sawIntuitiveDaVinciExampleQt PROPERTY FOLDER "sawIntuitiveDaVinci")
-
-    # link against non cisst libraries and saw components
-    target_link_libraries (sawIntuitiveDaVinciExampleQt
-                           ${sawIntuitiveDaVinci_LIBRARIES}
-                           )
-    # link against cisst libraries (and dependencies)
-    cisst_target_link_libraries (sawIntuitiveDaVinciExampleQt ${REQUIRED_CISST_LIBRARIES})
 
     # name the main executable and specifies with source files to use
     add_executable (sawIntuitiveDaVinciConsoleQt

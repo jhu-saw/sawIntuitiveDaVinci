@@ -278,9 +278,15 @@ void mtsIntuitiveDaVinci::SetOutputLogFile(const std::string filename)
     OutputLogFileName = filename;
 }
 
-void mtsIntuitiveDaVinci::StartLogging() { isi_start_logging(OutputLogFileName.c_str());}
+void mtsIntuitiveDaVinci::StartLogging(void)
+{
+    isi_start_logging(OutputLogFileName.c_str());
+}
 
-void mtsIntuitiveDaVinci::StopLogging() { isi_stop_logging();}
+void mtsIntuitiveDaVinci::StopLogging(void)
+{
+    isi_stop_logging();
+}
 
 void mtsIntuitiveDaVinci::Startup(void)
 {
@@ -422,7 +428,7 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
         status = isi_get_stream_field(isiIndex, ISI_JOINT_VALUES, &streamData);
         if (status == ISI_SUCCESS) {
             arm->DeviceTimestamp.Assign(static_cast<mtsFloat>(streamData.timestamp));
-        }   
+        }
         if (status != ISI_SUCCESS) {
             CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: get stream field failed for ISI_JOINT_VALUES, manipulator \""
                                     << ManipulatorIndexToString(index) << "\", status: "
@@ -1050,7 +1056,7 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
         arm->TorqueJoint.SetSize(numberOfJoints);
         // add to state table and provided interface
         arm->StateTable->AddData(arm->DeviceTimestamp, "DeviceTimestamp");
-        arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable), 
+        arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
                                                     arm->DeviceTimestamp, "GetDeviceTimestamp");
         arm->StateTable->AddData(arm->PositionCartesian, "PositionCartesian");
         arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),

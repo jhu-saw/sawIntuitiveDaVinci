@@ -89,6 +89,7 @@ int main(int argc, char ** argv)
     arms["PSM1"] = 0;
     arms["PSM2"] = 0;
     arms["PSM3"] = 0;
+    arms["ECM1"] = 0;
 
     ArmsType::iterator iter;
     ArmsType::iterator end = arms.end();

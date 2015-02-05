@@ -1,10 +1,8 @@
 #
-#
 # Author(s):  Anton Deguet
 # Created on: 2011-01-20
 #
-# (C) Copyright 2011-2012 Johns Hopkins University (JHU), All Rights
-# Reserved.
+# (C) Copyright 2011-2015 Johns Hopkins University (JHU), All Rights Reserved.
 #
 # --- begin cisst license - do not edit ---
 #
@@ -33,21 +31,35 @@ if (cisst_FOUND)
 
   if (isi_api_FOUND)
 
-    set (sawIntuitiveDaVinci_INCLUDE_DIR "${sawIntuitiveDaVinci_SOURCE_DIR}/include")
-    
-    if ("${LIBRARY_OUTPUT_PATH}" STREQUAL "")
-      set (sawIntuitiveDaVinci_LIBRARY_DIR "${CMAKE_CURRENT_BINARY_DIR}")
-    else ()
-      set (sawIntuitiveDaVinci_LIBRARY_DIR "${LIBRARY_OUTPUT_PATH}")
+    # where to save the libraries
+    if (NOT DEFINED LIBRARY_OUTPUT_PATH)
+      set (LIBRARY_OUTPUT_PATH "${sawIntuitiveDaVinci_BINARY_DIR}/lib")
     endif ()
-    set (sawIntuitiveDaVinci_LIBRARIES sawIntuitiveDaVinci "${isi_api_LIBRARIES}")
 
-    include_directories ("${sawIntuitiveDaVinci_INCLUDE_DIR}" "${isi_api_INCLUDE_DIR}")
-    set (sawIntuitiveDaVinci_HEADER_DIR "${sawIntuitiveDaVinci_INCLUDE_DIR}/sawIntuitiveDaVinci")
+    set (sawIntuitiveDaVinci_INCLUDE_DIR "${sawIntuitiveDaVinci_SOURCE_DIR}/include"
+                                         "${sawIntuitiveDaVinci_BINARY_DIR}/include")
+    set (sawIntuitiveDaVinci_LIBRARY_DIR "${LIBRARY_OUTPUT_PATH}")
+    set (sawIntuitiveDaVinci_LIBRARIES sawIntuitiveDaVinci "${isi_api_LIBRARIES}")
+    set (sawIntuitiveDaVinci_CONFIG_FILE_DIR "${sawIntuitiveDaVinci_BINARY_DIR}")
+
+    # Set the version number
+    set (sawIntuitiveDaVinci_VERSION_MAJOR "1")
+    set (sawIntuitiveDaVinci_VERSION_MINOR "0")
+    set (sawIntuitiveDaVinci_VERSION_PATCH "1")
+    set (sawIntuitiveDaVinci_VERSION "${sawIntuitiveDaVinci_VERSION_MAJOR}.${sawIntuitiveDaVinci_VERSION_MINOR}.${sawIntuitiveDaVinci_VERSION_PATCH}")
+
+    # Generate sawIntuitiveDaVinciRevision.h
+    configure_file ("${sawIntuitiveDaVinci_SOURCE_DIR}/code/sawIntuitiveDaVinciRevision.h.in"
+                    "${sawIntuitiveDaVinci_BINARY_DIR}/include/sawIntuitiveDaVinci/sawIntuitiveDaVinciRevision.h")
+
+    include_directories (${sawIntuitiveDaVinci_INCLUDE_DIR} "${isi_api_INCLUDE_DIR}")
+    set (sawIntuitiveDaVinci_HEADER_DIR "${sawIntuitiveDaVinci_SOURCE_DIR}/include/sawIntuitiveDaVinci")
     add_library (sawIntuitiveDaVinci ${IS_SHARED}
                  ${sawIntuitiveDaVinci_HEADER_DIR}/sawIntuitiveDaVinciExport.h
                  mtsIntuitiveDaVinci.cpp
-                 ${sawIntuitiveDaVinci_HEADER_DIR}/mtsIntuitiveDaVinci.h)
+                 ${sawIntuitiveDaVinci_HEADER_DIR}/mtsIntuitiveDaVinci.h
+                 ${sawIntuitiveDaVinci_BINARY_DIR}/include/sawIntuitiveDaVinci/sawIntuitiveDaVinciRevision.h)
+
     set_property (TARGET sawIntuitiveDaVinci PROPERTY FOLDER "sawIntuitiveDaVinci")
     target_link_libraries (sawIntuitiveDaVinci
                            ${isi_api_LIBRARIES})
@@ -62,9 +74,15 @@ if (cisst_FOUND)
                     "${sawIntuitiveDaVinci_BINARY_DIR}/sawIntuitiveDaVinciConfig.cmake"
                     @ONLY@)
 
+    cisst_add_config_version ("${sawIntuitiveDaVinci_CONFIG_FILE_DIR}/sawIntuitiveDaVinciConfigVersion.cmake"
+                              VERSION ${sawIntuitiveDaVinci_VERSION}
+                              DESTINATION ${CISST_CMAKE_INSTALL_SUFFIX}/saw
+                              COMPONENT sawIntuitiveDaVinci)
+
     # Install target for headers and library
     install (DIRECTORY
-             ${sawIntuitiveDaVinci_INCLUDE_DIR}/sawIntuitiveDaVinci
+             ${sawIntuitiveDaVinci_SOURCE_DIR}/include/sawIntuitiveDaVinci
+             ${sawIntuitiveDaVinci_BINARY_DIR}/include/sawIntuitiveDaVinci
              DESTINATION include
              PATTERN .svn EXCLUDE)
 
