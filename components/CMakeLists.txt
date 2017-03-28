@@ -1,8 +1,5 @@
 #
-# Author(s):  Anton Deguet
-# Created on: 2011-01-20
-#
-# (C) Copyright 2011-2015 Johns Hopkins University (JHU), All Rights Reserved.
+# (C) Copyright 2011-2017 Johns Hopkins University (JHU), All Rights Reserved.
 #
 # --- begin cisst license - do not edit ---
 #
@@ -12,6 +9,9 @@
 #
 # --- end cisst license ---
 
+project (sawIntuitiveDaVinci)
+
+cmake_minimum_required (VERSION 2.8)
 
 set (REQUIRED_CISST_LIBRARIES cisstCommon
                               cisstVector
@@ -19,33 +19,39 @@ set (REQUIRED_CISST_LIBRARIES cisstCommon
                               cisstMultiTask
                               cisstParameterTypes)
 
-find_package (cisst REQUIRED ${REQUIRED_CISST_LIBRARIES})
+find_package (cisst 1.0.6 REQUIRED ${REQUIRED_CISST_LIBRARIES})
 
-if (cisst_FOUND)
+if (cisst_FOUND_AS_REQUIRED)
 
   # load cisst configuration
   include (${CISST_USE_FILE})
 
   # To find isi_api-config.cmake
-  find_package (isi_api REQUIRED)
+  find_package (isi_api)
 
   if (isi_api_FOUND)
 
-    # where to save the libraries
-    if (NOT DEFINED LIBRARY_OUTPUT_PATH)
+    # catkin/ROS paths
+    cisst_is_catkin_build (sawIntuitiveDaVinci_IS_CATKIN_BUILT)
+    if (sawIntuitiveDaVinci_IS_CATKIN_BUILT)
+      set (sawIntuitiveDaVinci_CONFIG_FILE_DIR
+           "${CATKIN_DEVEL_PREFIX}/share/sawIntuitiveDaVinci/cmake")
       set (LIBRARY_OUTPUT_PATH "${sawIntuitiveDaVinci_BINARY_DIR}/lib")
+    else ()
+      set (sawIntuitiveDaVinci_CONFIG_FILE_DIR "${sawIntuitiveDaVinci_BINARY_DIR}")
     endif ()
 
-    set (sawIntuitiveDaVinci_INCLUDE_DIR "${sawIntuitiveDaVinci_SOURCE_DIR}/include"
-                                         "${sawIntuitiveDaVinci_BINARY_DIR}/include")
+
+    set (sawIntuitiveDaVinci_INCLUDE_DIR
+         "${sawIntuitiveDaVinci_SOURCE_DIR}/include"
+         "${sawIntuitiveDaVinci_BINARY_DIR}/include")
     set (sawIntuitiveDaVinci_LIBRARY_DIR "${LIBRARY_OUTPUT_PATH}")
     set (sawIntuitiveDaVinci_LIBRARIES sawIntuitiveDaVinci "${isi_api_LIBRARIES}")
-    set (sawIntuitiveDaVinci_CONFIG_FILE_DIR "${sawIntuitiveDaVinci_BINARY_DIR}")
 
     # Set the version number
     set (sawIntuitiveDaVinci_VERSION_MAJOR "1")
-    set (sawIntuitiveDaVinci_VERSION_MINOR "0")
-    set (sawIntuitiveDaVinci_VERSION_PATCH "1")
+    set (sawIntuitiveDaVinci_VERSION_MINOR "1")
+    set (sawIntuitiveDaVinci_VERSION_PATCH "0")
     set (sawIntuitiveDaVinci_VERSION "${sawIntuitiveDaVinci_VERSION_MAJOR}.${sawIntuitiveDaVinci_VERSION_MINOR}.${sawIntuitiveDaVinci_VERSION_PATCH}")
 
     # Generate sawIntuitiveDaVinciRevision.h
@@ -54,25 +60,31 @@ if (cisst_FOUND)
 
     include_directories (${sawIntuitiveDaVinci_INCLUDE_DIR} "${isi_api_INCLUDE_DIR}")
     set (sawIntuitiveDaVinci_HEADER_DIR "${sawIntuitiveDaVinci_SOURCE_DIR}/include/sawIntuitiveDaVinci")
+
     add_library (sawIntuitiveDaVinci ${IS_SHARED}
                  ${sawIntuitiveDaVinci_HEADER_DIR}/sawIntuitiveDaVinciExport.h
-                 mtsIntuitiveDaVinci.cpp
+                 code/mtsIntuitiveDaVinci.cpp
                  ${sawIntuitiveDaVinci_HEADER_DIR}/mtsIntuitiveDaVinci.h
                  ${sawIntuitiveDaVinci_BINARY_DIR}/include/sawIntuitiveDaVinci/sawIntuitiveDaVinciRevision.h)
 
     set_property (TARGET sawIntuitiveDaVinci PROPERTY FOLDER "sawIntuitiveDaVinci")
-    target_link_libraries (sawIntuitiveDaVinci
-                           ${isi_api_LIBRARIES})
     cisst_target_link_libraries (sawIntuitiveDaVinci ${REQUIRED_CISST_LIBRARIES})
+    # We can't link since the ISI binaries were not compiled using -fPIC
+    # target_link_libraries (sawIntuitiveDaVinci ${isi_api_LIBRARIES})
 
     # add Qt code
-    add_subdirectory (Qt)
-	set (sawIntuitiveDaVinci_LIBRARY_DIR ${sawIntuitiveDaVinci_LIBRARY_DIR} ${sawIntuitiveDaVinciQt_LIBRARY_DIR})
-    set (sawIntuitiveDaVinci_LIBRARIES ${sawIntuitiveDaVinci_LIBRARIES} ${sawIntuitiveDaVinciQt_LIBRARIES})
+    if (CISST_HAS_QT)
+      add_subdirectory (code/Qt)
+      set (sawIntuitiveDaVinci_LIBRARY_DIR ${sawIntuitiveDaVinci_LIBRARY_DIR} ${sawIntuitiveDaVinciQt_LIBRARY_DIR})
+      set (sawIntuitiveDaVinci_LIBRARIES ${sawIntuitiveDaVinci_LIBRARIES} ${sawIntuitiveDaVinciQt_LIBRARIES})
+    endif (CISST_HAS_QT)
 
-    configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/sawIntuitiveDaVinciConfig.cmake.in"
-                    "${sawIntuitiveDaVinci_BINARY_DIR}/sawIntuitiveDaVinciConfig.cmake"
-                    @ONLY@)
+    set (sawIntuitiveDaVinci_CMAKE_CONFIG_FILE
+         "${sawIntuitiveDaVinci_CONFIG_FILE_DIR}/sawIntuitiveDaVinciConfig.cmake")
+
+    configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/cmake/sawIntuitiveDaVinciConfig.cmake.in"
+                    "${sawIntuitiveDaVinci_CMAKE_CONFIG_FILE}"
+                    @ONLY)
 
     cisst_add_config_version ("${sawIntuitiveDaVinci_CONFIG_FILE_DIR}/sawIntuitiveDaVinciConfigVersion.cmake"
                               VERSION ${sawIntuitiveDaVinci_VERSION}
@@ -95,7 +107,9 @@ if (cisst_FOUND)
              DESTINATION "${CISST_CMAKE_INSTALL_SUFFIX}/saw")
 
   else (isi_api_FOUND)
-    message (SEND_ERROR "code in ${CMAKE_CURRENT_SOURCE_DIR} requires Intuitive Surgical Inc isi_api.")
+    message ("Information: code in ${CMAKE_CURRENT_SOURCE_DIR} will not be compiled, it requires Intuitive Surgical Inc isi_api.  Please set isi_api_DIR using CMake, e.g. ccmake ${CMAKE_CURRENT_BINARY_DIR}")
   endif (isi_api_FOUND)
 
-endif (cisst_FOUND)
+else (cisst_FOUND_AS_REQUIRED)
+  message ("Information: code in ${CMAKE_CURRENT_SOURCE_DIR} will not be compiled, it requires ${REQUIRED_CISST_LIBRARIES}")
+endif (cisst_FOUND_AS_REQUIRED)

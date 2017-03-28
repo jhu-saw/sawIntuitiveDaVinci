@@ -31,11 +31,8 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstVector/vctQtWidgetDynamicVector.h>
 #include <cisstMultiTask/mtsQtWidgetIntervalStatistics.h>
 
-
-
-#include <QtCore>
-#include <QtGui>
-
+#include <QWidget>
+#include <QTextEdit>
 
 class mtsIntuitiveDaVinciArmQtWidget: public QWidget, public mtsComponent
 {

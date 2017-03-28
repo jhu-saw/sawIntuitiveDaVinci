@@ -1,0 +1,18 @@
+<package>
+  <name>saw_intuitive_da_vinci</name>
+  <version>1.1.0</version>
+  <description>
+  sawIntuitiveDaVinci
+  </description>
+  <maintainer email="anton.deguet@jhu.edu">Anton Deguet</maintainer>
+  <license>cisst</license>
+  <url>https://github.com/jhu-saw/sawIntuitiveDaVinci</url>
+
+  <build_depend>cisst</build_depend>
+  <run_depend>cisst</run_depend>
+
+  <export>
+    <build_type>catkin</build_type>
+  </export>
+
+</package>
