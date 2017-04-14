@@ -2,11 +2,10 @@
 /* ex: set filetype=cpp softtabstop=4 shiftwidth=4 tabstop=4 cindent expandtab: */
 
 /*
-
   Author(s):  Anton Deguet, Nicolas Padoy
   Created on: 2010-04-06
 
-  (C) Copyright 2010-2011 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2010-2017 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -27,8 +26,7 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstMultiTask/mtsFunctionVoid.h>
 #include <cisstParameterTypes/prmPositionCartesianGet.h>
 #include <cisstParameterTypes/prmVelocityCartesianGet.h>
-#include <cisstParameterTypes/prmPositionJointGet.h>
-#include <cisstParameterTypes/prmVelocityJointGet.h>
+#include <cisstParameterTypes/prmStateJoint.h>
 #include <cisstParameterTypes/prmEventButton.h>
 #include <cisstParameterTypes/prmPositionCartesianSet.h>
 
@@ -134,9 +132,7 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
         mtsFloat DeviceTimestamp;
         prmPositionCartesianGet PositionCartesian;
         prmVelocityCartesianGet VelocityCartesian;
-        prmPositionJointGet PositionJoint;
-        prmVelocityJointGet VelocityJoint;
-        prmVelocityJointGet TorqueJoint;
+        prmStateJoint StateJoint;
     };
 
     /*! Class to contain the data specific to the master arms */
@@ -161,7 +157,7 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
         SlaveArmData(void);
         prmPositionCartesianGet PositionCartesianRCM;
         prmPositionCartesianGet PositionCartesianSetup;
-        prmPositionJointGet PositionJointSetup;
+        prmStateJoint StateSUJ;
     };
 
     /*! Class to contain data specific to the console */

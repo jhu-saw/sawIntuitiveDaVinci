@@ -36,20 +36,17 @@ mtsIntuitiveDaVinciArmQtWidget::mtsIntuitiveDaVinciArmQtWidget(const std::string
     mtsComponent(componentName),
     TimerPeriodInMilliseconds(periodInSeconds)
 {
+    QSJWidget = new prmStateJointQtWidget();
+    QSysWidget = new mtsSystemQtWidget(componentName);
+
     // Setup CISST Interface
     mtsInterfaceRequired * interfaceRequired = AddInterfaceRequired("Manipulator");
     if (interfaceRequired) {
         interfaceRequired->AddFunction("GetPositionCartesian", Arm.GetPositionCartesian);
-        interfaceRequired->AddFunction("GetVelocityCartesian", Arm.GetVelocityCartesian);
-        interfaceRequired->AddFunction("GetPositionJoint", Arm.GetPositionJoint);
-        interfaceRequired->AddFunction("GetVelocityJoint", Arm.GetVelocityJoint);
+        interfaceRequired->AddFunction("GetStateJoint", Arm.GetStateJoint);
+
+        QSysWidget->SetInterfaceRequired(interfaceRequired);
         interfaceRequired->AddFunction("GetPeriodStatistics", Arm.GetPeriodStatistics);
-        /*
-        interfaceRequired->AddEventHandlerWrite(&mtsIntuitiveDaVinciArmQtWidget::ErrorMessageEventHandler,
-                                                this, "RobotErrorMsg");
-        interfaceRequired->AddEventHandlerWrite(&mtsIntuitiveDaVinciArmQtWidget::StatusMessageEventHandler,
-                                                this, "RobotStatusMsg");
-        */
     }
     setupUi();
     startTimer(TimerPeriodInMilliseconds); // ms
@@ -102,33 +99,15 @@ void mtsIntuitiveDaVinciArmQtWidget::timerEvent(QTimerEvent * CMN_UNUSED(event))
     }
     QFRPositionCartesianWidget->SetValue(PositionCartesian.Position());
 
-    executionResult = Arm.GetVelocityCartesian(VelocityCartesian);
+    executionResult = Arm.GetStateJoint(StateJoint);
     if (!executionResult) {
-        CMN_LOG_CLASS_RUN_ERROR << "Manipulator.GetVelocityCartesian failed, \""
+        CMN_LOG_CLASS_RUN_ERROR << "Manipulator.GetStateJoint failed, \""
                                 << executionResult << "\"" << std::endl;
     }
-
-    executionResult = Arm.GetPositionJoint(PositionJoint);
-    if (!executionResult) {
-        CMN_LOG_CLASS_RUN_ERROR << "Manipulator.GetPositionJoint failed, \""
-                                << executionResult << "\"" << std::endl;
-    }
-    QVPositionJointWidget->SetValue(PositionJoint.Position() * (180.0 / cmnPI));
-
-    executionResult = Arm.GetVelocityJoint(VelocityJoint);
-    if (!executionResult) {
-        CMN_LOG_CLASS_RUN_ERROR << "Manipulator.GetVelocityJoint failed, \""
-                                << executionResult << "\"" << std::endl;
-    }
-    QVVelocityJointWidget->SetValue(VelocityJoint.Velocity() * (180.0 / cmnPI));
+    QSJWidget->SetValue(StateJoint);
 
     Arm.GetPeriodStatistics(IntervalStatistics);
-    QMIntervalStatistics->SetValue(IntervalStatistics);
-}
-
-void mtsIntuitiveDaVinciArmQtWidget::SlotTextChanged(void)
-{
-    QTEMessages->verticalScrollBar()->setSliderPosition(QTEMessages->verticalScrollBar()->maximum());
+    QSysWidget->SetValue(IntervalStatistics);
 }
 
 void mtsIntuitiveDaVinciArmQtWidget::setupUi(void)
@@ -143,54 +122,15 @@ void mtsIntuitiveDaVinciArmQtWidget::setupUi(void)
     QFRPositionCartesianWidget = new vctQtWidgetFrameDoubleRead(vctQtWidgetRotationDoubleRead::OPENGL_WIDGET);
     topLayout->addWidget(QFRPositionCartesianWidget);
 
-    // Timing
-    QVBoxLayout * timingLayout = new QVBoxLayout();
-    QMIntervalStatistics = new mtsQtWidgetIntervalStatistics();
-    timingLayout->addWidget(QMIntervalStatistics);
-    timingLayout->addStretch();
-    topLayout->addLayout(timingLayout);
+    // System
+    QSysWidget->setupUi();
+    topLayout->addWidget(QSysWidget);
 
-    // Vectors of values
-    QGridLayout * gridLayout = new QGridLayout;
-    mainLayout->addLayout(gridLayout);
-
-    gridLayout->setSpacing(1);
-    int row = 0;
-    gridLayout->addWidget(new QLabel("Joint positions"), row, 0);
-    QVPositionJointWidget = new vctQtWidgetDynamicVectorDoubleRead();
-    gridLayout->addWidget(QVPositionJointWidget, row, 1);
-    row++;
-    gridLayout->addWidget(new QLabel("Joint velocities"), row, 0);
-    QVVelocityJointWidget = new vctQtWidgetDynamicVectorDoubleRead();
-    gridLayout->addWidget(QVVelocityJointWidget, row, 1);
-    row++;
-
-    // Messages
-    QTEMessages = new QTextEdit();
-    QTEMessages->setReadOnly(true);
-    QTEMessages->ensureCursorVisible();
-    mainLayout->addWidget(QTEMessages);
+    // Joint state
+    QSJWidget->setupUi();
+    mainLayout->addWidget(QSJWidget);
 
     setLayout(mainLayout);
     setWindowTitle("Manipulator");
     resize(sizeHint());
-
-    connect(this, SIGNAL(SignalAppendMessage(QString)),
-            QTEMessages, SLOT(append(QString)));
-    connect(this, SIGNAL(SignalSetColor(QColor)),
-            QTEMessages, SLOT(setTextColor(QColor)));
-    connect(QTEMessages, SIGNAL(textChanged()),
-            this, SLOT(SlotTextChanged()));
-}
-
-void mtsIntuitiveDaVinciArmQtWidget::ErrorMessageEventHandler(const std::string & message)
-{
-    emit SignalSetColor(QColor("red"));
-    emit SignalAppendMessage(QTime::currentTime().toString("hh:mm:ss") + QString(" Error: ") + QString(message.c_str()));
-}
-
-void mtsIntuitiveDaVinciArmQtWidget::StatusMessageEventHandler(const std::string & message)
-{
-    emit SignalSetColor(QColor("black"));
-    emit SignalAppendMessage(QTime::currentTime().toString("hh:mm:ss") + QString(" Status: ") + QString(message.c_str()));
 }

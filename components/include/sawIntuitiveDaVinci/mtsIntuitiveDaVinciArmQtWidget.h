@@ -5,7 +5,7 @@
   Author(s):  Anton Deguet
   Created on: 2013-08-24
 
-  (C) Copyright 2013 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2013-2017 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -23,16 +23,11 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstMultiTask/mtsComponent.h>
 
 #include <cisstParameterTypes/prmPositionCartesianGet.h>
-#include <cisstParameterTypes/prmVelocityCartesianGet.h>
-#include <cisstParameterTypes/prmPositionJointGet.h>
-#include <cisstParameterTypes/prmVelocityJointGet.h>
-
 #include <cisstVector/vctQtWidgetFrame.h>
-#include <cisstVector/vctQtWidgetDynamicVector.h>
-#include <cisstMultiTask/mtsQtWidgetIntervalStatistics.h>
+#include <cisstMultiTask/mtsSystemQtWidget.h>
+#include <cisstParameterTypes/prmStateJointQtWidget.h>
 
 #include <QWidget>
-#include <QTextEdit>
 
 class mtsIntuitiveDaVinciArmQtWidget: public QWidget, public mtsComponent
 {
@@ -50,13 +45,8 @@ public:
 protected:
     virtual void closeEvent(QCloseEvent * event);
 
-signals:
-    void SignalAppendMessage(QString);
-    void SignalSetColor(QColor);
-
 private slots:
     void timerEvent(QTimerEvent * event);
-    void SlotTextChanged(void);
 
 private:
     //! setup GUI
@@ -66,30 +56,20 @@ private:
 protected:
     struct ArmStruct {
         mtsFunctionRead GetPositionCartesian;
-        mtsFunctionRead GetVelocityCartesian;
-        mtsFunctionRead GetPositionJoint;
-        mtsFunctionRead GetVelocityJoint;
+        mtsFunctionRead GetStateJoint;
         mtsFunctionRead GetPeriodStatistics;
     } Arm;
 
 private:
     prmPositionCartesianGet PositionCartesian;
-    prmVelocityCartesianGet VelocityCartesian;
-    prmPositionJointGet PositionJoint;
-    prmVelocityJointGet VelocityJoint;
+    prmStateJoint StateJoint;
 
     vctQtWidgetFrameDoubleRead * QFRPositionCartesianWidget;
-    vctQtWidgetDynamicVectorDoubleRead * QVPositionJointWidget;
-    vctQtWidgetDynamicVectorDoubleRead * QVVelocityJointWidget;
+    prmStateJointQtWidget * QSJWidget;
 
-    // Timing
+    // Timing & messages
+    mtsSystemQtWidget * QSysWidget;
     mtsIntervalStatistics IntervalStatistics;
-    mtsQtWidgetIntervalStatistics * QMIntervalStatistics;
-
-    // Messages
-    void ErrorMessageEventHandler(const std::string & message);
-    void StatusMessageEventHandler(const std::string & message);
-    QTextEdit * QTEMessages;
 };
 
 CMN_DECLARE_SERVICES_INSTANTIATION(mtsIntuitiveDaVinciArmQtWidget);
