@@ -176,7 +176,7 @@ namespace mtsIntuitiveDaVinciUtilities
     {
         // ISI_TRANSFORM.pos is a struct with 3 floats, x, y, and z
         output.Translation().Assign(vctFixedSizeConstVectorRef<float, 3, 1>(&(input.pos.x)));
-#if !CISST_USE_SI
+#if !CISST_USE_SI_UNITS
         output.Translation().Multiply(1000.0); // ISI meters to cisst millimeters
 #endif
         // rotation
