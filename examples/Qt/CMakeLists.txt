@@ -1,5 +1,5 @@
 #
-# (C) Copyright 2009-2015 Johns Hopkins University (JHU), All Rights Reserved.
+# (C) Copyright 2009-2017 Johns Hopkins University (JHU), All Rights Reserved.
 #
 # --- begin cisst license - do not edit ---
 #
@@ -10,9 +10,15 @@
 # --- end cisst license ---
 
 # list of cisst libraries needed
-set (REQUIRED_CISST_LIBRARIES cisstCommon cisstVector cisstOSAbstraction
-                              cisstMultiTask cisstMultiTaskQt
-                              cisstParameterTypes cisstQt)
+set (REQUIRED_CISST_LIBRARIES
+     cisstCommon
+     cisstVector
+     cisstOSAbstraction
+     cisstMultiTask
+     cisstMultiTaskQt
+     cisstParameterTypes
+     cisstParameterTypesQt
+     cisstQt)
 
 # find cisst and make sure the required libraries have been compiled
 find_package (cisst REQUIRED ${REQUIRED_CISST_LIBRARIES})

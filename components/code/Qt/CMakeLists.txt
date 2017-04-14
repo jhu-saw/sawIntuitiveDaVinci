@@ -39,7 +39,9 @@ if (cisst_FOUND_AS_REQUIRED)
   endif (CISST_HAS_QT4)
 
   add_library (sawIntuitiveDaVinciQt
+               ${sawIntuitiveDaVinci_HEADER_DIR}/mtsIntuitiveDaVinciQt.h
                ${sawIntuitiveDaVinci_HEADER_DIR}/mtsIntuitiveDaVinciArmQtWidget.h
+	       mtsIntuitiveDaVinciQt.cpp
                mtsIntuitiveDaVinciArmQtWidget.cpp
                ${SAW_INTUITIVE_RESEARCH_KIT_QT_WRAP_CPP})
   set_property (TARGET sawIntuitiveDaVinciQt PROPERTY FOLDER "sawIntuitiveDaVinci")

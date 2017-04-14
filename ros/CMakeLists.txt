@@ -58,17 +58,17 @@ if (cisst_FOUND_AS_REQUIRED)
     link_directories (${sawIntuitiveDaVinci_LIBRARY_DIR})
 
     # name the main executable and specifies with source files to use
-    add_executable (sawIntuitiveDaVinciConsoleQt
+    add_executable (isi_console
                     src/isi_console.cpp
                     )
-    set_property (TARGET sawIntuitiveDaVinciConsoleQt PROPERTY FOLDER "sawIntuitiveDaVinci")
+    set_property (TARGET isi_console PROPERTY FOLDER "sawIntuitiveDaVinci")
 
     # link against non cisst libraries and saw components
-    target_link_libraries (sawIntuitiveDaVinciConsoleQt
+    target_link_libraries (isi_console
                            ${sawIntuitiveDaVinci_LIBRARIES}
                            )
     # link against cisst libraries (and dependencies)
-    cisst_target_link_libraries (sawIntuitiveDaVinciConsoleQt ${REQUIRED_CISST_LIBRARIES})
+    cisst_target_link_libraries (isi_console ${REQUIRED_CISST_LIBRARIES})
 
   endif (sawIntuitiveDaVinci_FOUND)
 
