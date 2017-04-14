@@ -2,11 +2,10 @@
 /* ex: set filetype=cpp softtabstop=4 shiftwidth=4 tabstop=4 cindent expandtab: */
 
 /*
-
   Author(s):  Anton Deguet, Nicolas Padoy
   Created on: 2010-04-06
 
-  (C) Copyright 2010-2011 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2010-2017 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -177,8 +176,9 @@ namespace mtsIntuitiveDaVinciUtilities
     {
         // ISI_TRANSFORM.pos is a struct with 3 floats, x, y, and z
         output.Translation().Assign(vctFixedSizeConstVectorRef<float, 3, 1>(&(input.pos.x)));
+#if !CISST_USE_SI
         output.Translation().Multiply(1000.0); // ISI meters to cisst millimeters
-
+#endif
         // rotation
         output.Rotation().Column(0).Assign(input.rot.row0.x, input.rot.row1.x, input.rot.row2.x);
         output.Rotation().Column(1).Assign(input.rot.row0.y, input.rot.row1.y, input.rot.row2.y);
@@ -246,7 +246,7 @@ CMN_IMPLEMENT_SERVICES(mtsIntuitiveDaVinci);
 
 
 mtsIntuitiveDaVinci::mtsIntuitiveDaVinci(const std::string & name, unsigned int rateInHz):
-    mtsTaskPeriodic(name, 10 * cmn_ms), //TaskFromSignal(name),
+    mtsTaskPeriodic(name, 1.0 * cmn_ms), //TaskFromSignal(name),
     Connected(false),
     RateInHz(rateInHz)
 {
@@ -444,40 +444,44 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
             } else {
                 // save the joint values
                 jointRef.SetRef(numberOfJoints, streamData.data);
-                arm->PositionJoint.Position().Assign(jointRef);
+                arm->StateJoint.Position().Assign(jointRef);
                 // trigger events based on joint values for masters
                 if ((index == MTML1) || (index == MTMR1)) {
                     masterArm = reinterpret_cast<MasterArmData *>(arm);
                     // compute angle on last joint to trigger select event
-                    eventCriterion = ((masterArm->PositionJoint.Position()[numberOfJoints - 1]) < MasterArmData::SelectAngle);
+                    eventCriterion = ((masterArm->StateJoint.Position()[numberOfJoints - 1]) < MasterArmData::SelectAngle);
                     if (eventCriterion && !masterArm->Selected) {
                         atLeastOneMasterSelected = true;
                         buttonPayload = prmEventButton::PRESSED;
                         masterArm->Select(buttonPayload);
                         masterArm->Selected = true;
+                        masterArm->ProvidedInterface->SendStatus("Gripper closed");
                     } else if (!eventCriterion && masterArm->Selected) {
                         buttonPayload = prmEventButton::RELEASED;
                         masterArm->Select(buttonPayload);
                         masterArm->Selected = false;
+                        masterArm->ProvidedInterface->SendStatus("Gripper opened");
                     }
                     // clutch on masters makes sense only when master clutch is on
                     if (this->Console.Clutched) {
                         // update clutch rest angle if needed
                         if (masterArm->ClutchRestAngleNeedsUpdate) {
-                            masterArm->ClutchRestAngle = masterArm->PositionJoint.Position()[numberOfJoints - 2];
+                            masterArm->ClutchRestAngle = masterArm->StateJoint.Position()[numberOfJoints - 2];
                             masterArm->ClutchRestAngleNeedsUpdate = false;
                         }
                         // compute angle on before last joint to trigger select event
-                        eventCriterion = (fabs((masterArm->PositionJoint.Position()[numberOfJoints - 2])
+                        eventCriterion = (fabs((masterArm->StateJoint.Position()[numberOfJoints - 2])
                                                - masterArm->ClutchRestAngle) > MasterArmData::ClutchAngle);
                         if (eventCriterion && !masterArm->Clutched) {
                             buttonPayload = prmEventButton::PRESSED;
                             masterArm->Clutch(buttonPayload);
                             masterArm->Clutched = true;
+                            masterArm->ProvidedInterface->SendStatus("Clutched");
                         } else if (!eventCriterion && masterArm->Clutched) {
                             buttonPayload = prmEventButton::RELEASED;
                             masterArm->Clutch(buttonPayload);
                             masterArm->Clutched = false;
+                            masterArm->ProvidedInterface->SendStatus("Unclutched");
                         }
                     }
                 }
@@ -532,7 +536,7 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                 // save the joint values
                 vctDynamicConstVectorRef<float> jointVel;
                 jointVel.SetRef(numberOfJoints, streamData.data);
-                arm->VelocityJoint.Velocity().Assign(jointVel);
+                arm->StateJoint.Velocity().Assign(jointVel);
             }
         }
 
@@ -554,7 +558,7 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                 // save the joint values
                 vctDynamicConstVectorRef<float> jointTorque;
                 jointTorque.SetRef(numberOfJoints, streamData.data);
-                arm->TorqueJoint.Velocity().Assign(jointTorque);
+                arm->StateJoint.Effort().Assign(jointTorque);
             }
         }
 
@@ -657,9 +661,9 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                                             << streamData.count << std::endl;
                 } else {
                     // save the joint values
-                    vctDynamicConstVectorRef<float> jointVel;
-                    jointVel.SetRef(numberOfJoints, streamData.data);
-                    slaveArm->PositionJointSetup.Position().Assign(jointVel);
+                    vctDynamicConstVectorRef<float> jointPos;
+                    jointPos.SetRef(numberOfJoints, streamData.data);
+                    slaveArm->StateSUJ.Position().Assign(jointPos);
                 }
             }
         }
@@ -1047,13 +1051,15 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
         // add a provided interface
         arm->ProvidedInterface = this->AddInterfaceProvided(manipulatorName);
         CMN_ASSERT(arm->ProvidedInterface);
+        // add default message events
+        arm->ProvidedInterface->AddMessageEvents();
         // add a void event to indicate new stream of data has been captured
         arm->ProvidedInterface->AddEventVoid(arm->DataUpdated, "DataUpdated");
         // resize containers for joint information
         numberOfJoints = mtsIntuitiveDaVinci::GetNumberOfJoints(manipulatorIndex);
-        arm->PositionJoint.SetSize(numberOfJoints);
-        arm->VelocityJoint.SetSize(numberOfJoints);
-        arm->TorqueJoint.SetSize(numberOfJoints);
+        arm->StateJoint.Position().SetSize(numberOfJoints);
+        arm->StateJoint.Velocity().SetSize(numberOfJoints);
+        arm->StateJoint.Effort().SetSize(numberOfJoints);
         // add to state table and provided interface
         arm->StateTable->AddData(arm->DeviceTimestamp, "DeviceTimestamp");
         arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
@@ -1064,15 +1070,9 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
         arm->StateTable->AddData(arm->VelocityCartesian, "VelocityCartesian");
         arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
                                                     arm->VelocityCartesian, "GetVelocityCartesian");
-        arm->StateTable->AddData(arm->PositionJoint, "PositionJoint");
+        arm->StateTable->AddData(arm->StateJoint, "StateJoint");
         arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
-                                                    arm->PositionJoint, "GetPositionJoint");
-        arm->StateTable->AddData(arm->VelocityJoint, "VelocityJoint");
-        arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
-                                                    arm->VelocityJoint, "GetVelocityJoint");
-        arm->StateTable->AddData(arm->TorqueJoint, "TorqueJoint");
-        arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
-                                                    arm->TorqueJoint, "GetTorqueJoint");
+                                                    arm->StateJoint, "GetStateJoint");
         arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
                                                     arm->StateTable->PeriodStats,
                                                     "GetPeriodStatistics");
@@ -1131,10 +1131,10 @@ void mtsIntuitiveDaVinci::SetupSlavesInterfaces(void)
         slaveArm->StateTable->AddData(slaveArm->PositionCartesianSetup, "PositionCartesianSetup");
         slaveArm->ProvidedInterface->AddCommandReadState(*(slaveArm->StateTable),
                                                          slaveArm->PositionCartesianSetup, "GetPositionCartesianSetup");
-        slaveArm->PositionJointSetup.SetSize(6);
-        slaveArm->StateTable->AddData(slaveArm->PositionJointSetup, "PositionJointSetup");
+        slaveArm->StateSUJ.Position().SetSize(6);
+        slaveArm->StateTable->AddData(slaveArm->StateSUJ, "StateSUJ");
         slaveArm->ProvidedInterface->AddCommandReadState(*(slaveArm->StateTable),
-                                                         slaveArm->PositionJointSetup, "GetPositionJointSetup");
+                                                         slaveArm->StateSUJ, "GetStateJointSetup");
     }
 }
 
