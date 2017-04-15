@@ -574,12 +574,14 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                 CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: received wrong number of elements for ISI_TIP_LINEAR_VELOCITY, manipulator \""
                                         << ManipulatorIndexToString(index) << "\", expected 3, received "
                                         << streamData.count << std::endl;
+                arm->VelocityCartesian.Valid() = false;
             } else {
                 ISI_VECTOR * isiTransform = reinterpret_cast<ISI_VECTOR *>(streamData.data);
-                vctDouble3& vel = arm->VelocityCartesian.VelocityLinear();
+                vctDouble3 & vel = arm->VelocityCartesian.VelocityLinear();
                 vel[0] = isiTransform->x;
                 vel[1] = isiTransform->y;
                 vel[2] = isiTransform->z;
+                arm->VelocityCartesian.Valid() = true;
             }
         }
 
@@ -595,12 +597,14 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                 CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: received wrong number of elements for ISI_TIP_ANGULAR_VELOCITY, manipulator \""
                                         << ManipulatorIndexToString(index) << "\", expected 3, received "
                                         << streamData.count << std::endl;
+                arm->VelocityCartesian.Valid() = false;
             } else {
                 ISI_VECTOR * isiTransform = reinterpret_cast<ISI_VECTOR *>(streamData.data);
-                vctDouble3& vel = arm->VelocityCartesian.VelocityAngular();
+                vctDouble3 & vel = arm->VelocityCartesian.VelocityAngular();
                 vel[0] = isiTransform->x;
                 vel[1] = isiTransform->y;
                 vel[2] = isiTransform->z;
+                arm->VelocityCartesian.Valid() = true;
             }
         }
 

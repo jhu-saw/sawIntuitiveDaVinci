@@ -44,6 +44,14 @@ isi_ros::isi_ros(mtsROSBridge & bridge,
         bridge.AddPublisherFromCommandRead<prmStateJoint, sensor_msgs::JointState>
             (*iter, "GetStateJoint",
              arm_namespace + "/state_joint_current");
+        bridge.AddPublisherFromCommandRead<prmPositionCartesianGet, geometry_msgs::PoseStamped>
+            (*iter, "GetPositionCartesian",
+             arm_namespace + "/position_cartesian_current");
+
+        bridge.AddPublisherFromCommandRead<prmVelocityCartesianGet, geometry_msgs::TwistStamped>
+            (*iter, "GetVelocityCartesian",
+             arm_namespace + "/twist_body_current");
+
     }
 }
 
