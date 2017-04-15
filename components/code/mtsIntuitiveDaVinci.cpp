@@ -1068,6 +1068,7 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
         arm->StateTable->AddData(arm->DeviceTimestamp, "DeviceTimestamp");
         arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
                                                     arm->DeviceTimestamp, "GetDeviceTimestamp");
+        arm->PositionCartesian.SetMovingFrame(mtsIntuitiveDaVinci::ManipulatorIndexToString(manipulatorIndex));
         arm->StateTable->AddData(arm->PositionCartesian, "PositionCartesian");
         arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
                                                     arm->PositionCartesian, "GetPositionCartesian");
