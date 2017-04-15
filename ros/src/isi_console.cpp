@@ -24,6 +24,9 @@ http://www.cisst.org/cisst/license.txt.
 #include <sawIntuitiveDaVinci/mtsIntuitiveDaVinci.h>
 #include <sawIntuitiveDaVinci/mtsIntuitiveDaVinciQt.h>
 
+#include <cisst_ros_bridge/mtsROSBridge.h>
+#include <isi_ros/isi_ros.h>
+
 #include <QApplication>
 
 int main(int argc, char ** argv)
@@ -37,6 +40,7 @@ int main(int argc, char ** argv)
 
     // parse options
     cmnCommandLineOptions options;
+    std::string rosNamespace = "/isi";
     double rosPeriod = 10.0 * cmn_ms;
 
     options.AddOptionNoValue("t", "text-only",
@@ -45,7 +49,12 @@ int main(int argc, char ** argv)
     options.AddOptionOneValue("p", "ros-period",
                               "period in seconds to read all tool positions (default 0.01, 10 ms, 100Hz).  There is no point to have a period higher than the tracker component",
                               cmnCommandLineOptions::OPTIONAL_OPTION, &rosPeriod);
-    
+
+    options.AddOptionOneValue("n", "ros-namespace",
+                              "ROS namespace to prefix all topics, must have start and end \"/\" (default /isi)",
+                              cmnCommandLineOptions::OPTIONAL_OPTION, &rosNamespace);
+
+
     std::string errorMessage;
     if (!options.Parse(argc, argv, errorMessage)) {
         std::cerr << "Error: " << errorMessage << std::endl;
@@ -72,7 +81,15 @@ int main(int argc, char ** argv)
         daVinciQt->Configure(daVinci);
         daVinciQt->Connect();
     }
-    
+
+    // ros wrapper
+    std::string bridgeName = "sawIntuitiveDaVinci" + rosNamespace;
+    std::replace(bridgeName.begin(), bridgeName.end(), '/', '_');
+    mtsROSBridge rosBridge(bridgeName, rosPeriod, true);
+    isi_ros * isiROS = new isi_ros(rosBridge, rosNamespace, daVinci);
+    componentManager->AddComponent(&rosBridge);
+    isiROS->Connect();
+
     //-------------- create the components ------------------
     componentManager->CreateAllAndWait(2.0 * cmn_s);
     componentManager->StartAllAndWait(2.0 * cmn_s);
@@ -92,7 +109,7 @@ int main(int argc, char ** argv)
         delete daVinciQt;
     }
     delete daVinci;
-    
+
     // stop all logs
     cmnLogger::Kill();
 

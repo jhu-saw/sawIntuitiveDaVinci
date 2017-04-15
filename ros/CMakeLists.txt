@@ -42,11 +42,13 @@ if (cisst_FOUND_AS_REQUIRED)
   include (${CISST_USE_FILE})
 
   # include_directories(include)
-  include_directories (${catkin_INCLUDE_DIRS})
+  include_directories (${catkin_INCLUDE_DIRS}
+                       ${isi_ros_SOURCE_DIR}/include)
 
   file (MAKE_DIRECTORY "${CATKIN_DEVEL_PREFIX}/include")
 
   catkin_package (INCLUDE_DIRS "${CATKIN_DEVEL_PREFIX}/include"
+                  LIBRARIES isi_ros
                   CATKIN_DEPENDS cisst_ros_bridge geometry_msgs roscpp std_msgs)
 
   find_package (sawIntuitiveDaVinci 1.1.0)
@@ -57,6 +59,16 @@ if (cisst_FOUND_AS_REQUIRED)
     include_directories (${sawIntuitiveDaVinci_INCLUDE_DIR})
     link_directories (${sawIntuitiveDaVinci_LIBRARY_DIR})
 
+    add_library (isi_ros
+                 include/isi_ros/isi_ros.h
+                 src/isi_ros.cpp)
+
+    target_link_libraries (isi_ros
+                           ${sawIntuitiveDaVinci_LIBRARIES}
+                           )
+    # link against cisst libraries (and dependencies)
+    cisst_target_link_libraries (isi_ros ${REQUIRED_CISST_LIBRARIES})
+
     # name the main executable and specifies with source files to use
     add_executable (isi_console
                     src/isi_console.cpp
@@ -66,7 +78,8 @@ if (cisst_FOUND_AS_REQUIRED)
     # link against non cisst libraries and saw components
     target_link_libraries (isi_console
                            ${sawIntuitiveDaVinci_LIBRARIES}
-                           )
+                           isi_ros
+			   ${catkin_LIBRARIES})
     # link against cisst libraries (and dependencies)
     cisst_target_link_libraries (isi_console ${REQUIRED_CISST_LIBRARIES})
 

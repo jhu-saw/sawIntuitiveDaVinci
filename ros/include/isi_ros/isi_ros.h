@@ -3,7 +3,7 @@
 
 /*
   Author(s):  Anton Deguet
-  Created on: 2015-07-13
+  Created on: 2015-05-23
 
   (C) Copyright 2015-2017 Johns Hopkins University (JHU), All Rights Reserved.
 
@@ -16,28 +16,29 @@ http://www.cisst.org/cisst/license.txt.
 --- end cisst license ---
 */
 
+#ifndef _isi_ros_h
+#define _isi_ros_h
 
-#ifndef _mtsIntuitiveDaVinciQt_h
-#define _mtsIntuitiveDaVinciQt_h
+#include <string>
+#include <list>
 
-#include <cisstCommon/cmnGenericObject.h>
-#include <sawIntuitiveDaVinci/mtsIntuitiveDaVinci.h>
-#include <sawIntuitiveDaVinci/mtsIntuitiveDaVinciArmQtWidget.h>
-class QTabWidget;
-class QWidget;
+class mtsIntuitiveDaVinci;
+class mtsROSBridge;
 
-class mtsIntuitiveDaVinciQt: public cmnGenericObject
+class isi_ros
 {
-    CMN_DECLARE_SERVICES(CMN_NO_DYNAMIC_CREATION, CMN_LOG_ALLOW_DEFAULT);
-
 public:
-    mtsIntuitiveDaVinciQt(void);
-    ~mtsIntuitiveDaVinciQt();
-    void Configure(mtsIntuitiveDaVinci * daVinci);
+    isi_ros(mtsROSBridge & bridge,
+            const std::string & ros_namespace,
+            mtsIntuitiveDaVinci * daVinci);
     void Connect(void);
 
 protected:
-    typedef std::map<std::string, mtsIntuitiveDaVinciArmQtWidget *> ArmsType;
+    std::string mBridgeName;
+    std::string mNameSpace;
+    mtsIntuitiveDaVinci * mDaVinci;
+
+    typedef std::list<std::string> ArmsType;
     ArmsType Arms;
 
     class ConnectionType {
@@ -60,10 +61,6 @@ protected:
 
     typedef std::list<ConnectionType *> ConnectionsType;
     ConnectionsType Connections;
-
-    QTabWidget * TabWidget;
 };
 
-CMN_DECLARE_SERVICES_INSTANTIATION(mtsIntuitiveDaVinciQt);
-
-#endif // _mtsIntuitiveDaVinciQt_h
+#endif // _isi_ros_h
