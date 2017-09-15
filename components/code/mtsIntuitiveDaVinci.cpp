@@ -28,64 +28,64 @@ http://www.cisst.org/cisst/license.txt.
 
 namespace mtsIntuitiveDaVinciUtilities
 {
-    const ISI_UINT ALL_DOFS[ISI_NUM_MAX_JOINTS] = { 0, 1, 2, 3, 4, 5, 6, 7 };
+    const ISI_UINT ALL_DOFS[daVinci::NUM_MAX_JOINTS] = { 0, 1, 2, 3, 4, 5, 6, 7 };
 
-    ISI_MANIP_INDEX ManipulatorIndexToISI(mtsIntuitiveDaVinci::ManipulatorIndexType index)
+    ISI::MANIP_INDEX ManipulatorIndexToISI(mtsIntuitiveDaVinci::ManipulatorIndexType index)
     {
         switch (index) {
         case mtsIntuitiveDaVinci::MTML1:
-            return ISI_MTML1;
+            return daVinci::MTML1;
         case mtsIntuitiveDaVinci::MTMR1:
-            return ISI_MTMR1;
+            return daVinci::MTMR1;
         case mtsIntuitiveDaVinci::MTML2:
-            return ISI_MTML2;
+            return daVinci::MTML2;
         case mtsIntuitiveDaVinci::MTMR2:
-            return ISI_MTMR2;
+            return daVinci::MTMR2;
         case mtsIntuitiveDaVinci::PSM1:
-            return ISI_PSM1;
+            return daVinci::PSM1;
         case mtsIntuitiveDaVinci::PSM2:
-            return ISI_PSM2;
+            return daVinci::PSM2;
         case mtsIntuitiveDaVinci::PSM3:
-            return ISI_PSM3;
+            return daVinci::PSM3;
         case mtsIntuitiveDaVinci::ECM1:
-            return ISI_ECM; // Black Box API dropped the number
+            return daVinci::ECM; // Black Box API dropped the number
         case mtsIntuitiveDaVinci::CONSOLE1:
-            return ISI_CONSOLE1;
+            return daVinci::CONSOLE1;
         case mtsIntuitiveDaVinci::CONSOLE2:
-            return ISI_CONSOLE2;
+            return daVinci::CONSOLE2;
         case mtsIntuitiveDaVinci::CORE:
-            return ISI_CORE;
+            return daVinci::CORE;
         default:
             CMN_LOG_RUN_WARNING << "mtsIntuitiveDaVinciUtilities::ManipulatorIndexToISI: index out of range" << std::endl;
         }
-        return ISI_NUM_MANIPS;
+        return daVinci::NUM_MANIPS;
     }
 
 
-    mtsIntuitiveDaVinci::ManipulatorIndexType ManipulatorIndexFromISI(ISI_MANIP_INDEX index)
+    mtsIntuitiveDaVinci::ManipulatorIndexType ManipulatorIndexFromISI(ISI::MANIP_INDEX index)
     {
         switch (index) {
-        case ISI_MTML1:
+        case daVinci::MTML1:
             return mtsIntuitiveDaVinci::MTML1;
-        case ISI_MTMR1:
+        case daVinci::MTMR1:
             return mtsIntuitiveDaVinci::MTMR1;
-        case ISI_MTML2:
+        case daVinci::MTML2:
             return mtsIntuitiveDaVinci::MTML2;
-        case ISI_MTMR2:
+        case daVinci::MTMR2:
             return mtsIntuitiveDaVinci::MTMR2;
-        case ISI_PSM1:
+        case daVinci::PSM1:
             return mtsIntuitiveDaVinci::PSM1;
-        case ISI_PSM2:
+        case daVinci::PSM2:
             return mtsIntuitiveDaVinci::PSM2;
-        case ISI_PSM3:
+        case daVinci::PSM3:
             return mtsIntuitiveDaVinci::PSM3;
-        case ISI_ECM:
+        case daVinci::ECM:
             return mtsIntuitiveDaVinci::ECM1; // Black Box API dropped the number
-        case ISI_CONSOLE1:
+        case daVinci::CONSOLE1:
             return mtsIntuitiveDaVinci::CONSOLE1;
-        case ISI_CONSOLE2:
+        case daVinci::CONSOLE2:
             return mtsIntuitiveDaVinci::CONSOLE2;
-        case ISI_CORE:
+        case daVinci::CORE:
             return mtsIntuitiveDaVinci::CORE;
         default:
             CMN_LOG_RUN_WARNING << "mtsIntuitiveDaVinciUtilities::ManipulatorIndexToISI: index out of range" << std::endl;
@@ -146,7 +146,7 @@ namespace mtsIntuitiveDaVinciUtilities
     }
 
 
-    void ISICALLBACK EventCallback(ISI_MANIP_INDEX isiManipulatorIndex,
+    void ISICALLBACK EventCallback(ISI::MANIP_INDEX isiManipulatorIndex,
                                    ISI_EVENT_ID eventId,
                                    ISI_INT (arguments[ISI_NUM_EVENT_ARGS]),
                                    void * userData)
@@ -166,7 +166,7 @@ namespace mtsIntuitiveDaVinciUtilities
         CMN_ASSERT(instance);
         // convert ISI manipulator index
         mtsIntuitiveDaVinci::ManipulatorIndexType manipulatorIndex =
-            mtsIntuitiveDaVinciUtilities::ManipulatorIndexFromISI(ISI_MANIP_INDEX(isiManipulatorIndex));
+            mtsIntuitiveDaVinciUtilities::ManipulatorIndexFromISI(ISI::MANIP_INDEX(isiManipulatorIndex));
         instance->EventCallback(manipulatorIndex, eventId, eventArgs);
     }
 
@@ -403,7 +403,7 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
 {
     // API calls
     mtsIntuitiveDaVinci::ManipulatorIndexType index;
-    ISI_MANIP_INDEX isiIndex;
+    ISI::MANIP_INDEX isiIndex;
     ISI_STATUS status;
     ISI_STREAM_FIELD streamData;
     vctDynamicConstVectorRef<float> jointRef;
@@ -547,7 +547,11 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                                     << ManipulatorIndexToString(index) << "\", status: "
                                     << mtsIntuitiveDaVinciUtilities::StatusToString(status) << std::endl;
         } else {
-            numberOfJoints = GetNumberOfJoints(index);
+            if ((index == MTML1) || (index == MTMR1)) {
+                numberOfJoints = GetNumberOfJoints(index) - 1; // MTMs don't report effort on gripper
+            } else {
+                numberOfJoints = GetNumberOfJoints(index);
+            }
             // check size of data
             if (streamData.count != numberOfJoints) {
                 CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: received wrong number of elements for ISI_JOINT_TORQUE, manipulator \""
@@ -558,7 +562,7 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                 // save the joint values
                 vctDynamicConstVectorRef<float> jointTorque;
                 jointTorque.SetRef(numberOfJoints, streamData.data);
-                arm->StateJoint.Effort().Assign(jointTorque);
+                arm->StateJoint.Effort().Ref(numberOfJoints).Assign(jointTorque); // assign subset of joints (for MTMs)
             }
         }
 
@@ -656,7 +660,7 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                                         << ManipulatorIndexToString(index) << "\", status: "
                                         << mtsIntuitiveDaVinciUtilities::StatusToString(status) << std::endl;
             } else {
-                numberOfJoints = ISI_NUM_SUJ_JOINTS;
+                numberOfJoints = daVinci::NUM_SUJ_JOINTS;
                 // check size of data
                 if (streamData.count != numberOfJoints) {
                     CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: received wrong number of elements for ISI_SUJ_JOINT_VALUES, manipulator \""
@@ -957,13 +961,13 @@ size_t mtsIntuitiveDaVinci::GetNumberOfJoints(ManipulatorIndexType manipulatorIn
     size_t numJoints = 0;
     switch (manipulatorType) {
     case MTM_TYPE:
-        numJoints = ISI_NUM_MTM_JOINTS;
+        numJoints = ISI::NUM_MTM_JOINTS;
         break;
     case PSM_TYPE:
-        numJoints = ISI_NUM_PSM_JOINTS;
+        numJoints = daVinci::NUM_PSM_JOINTS;
         break;
     case ECM_TYPE:
-        numJoints = ISI_NUM_ECM_JOINTS;
+        numJoints = daVinci::NUM_ECM_JOINTS;
         break;
     default:
         CMN_LOG_RUN_ERROR << " Class mtsIntuitiveDaVinci: GetNumberOfJoints: invalid manipulator type for manipulator index " << manipulatorIndex << std::endl;
@@ -981,7 +985,7 @@ size_t mtsIntuitiveDaVinci::GetNumberOfSetupJoints(ManipulatorIndexType manipula
             break;
         case ECM_TYPE:
         case PSM_TYPE:
-            numSetupJoints = ISI_NUM_SUJ_JOINTS;
+            numSetupJoints = daVinci::NUM_SUJ_JOINTS;
             break;
         default:
             CMN_LOG_INIT_ERROR << "Class mtsIntuitiveDaVinci: GetNumberOfSetupJoints: invalid manipulator type: " << manipulatorIndex << "  " << std::endl;
