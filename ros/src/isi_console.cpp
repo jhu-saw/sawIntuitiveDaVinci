@@ -41,13 +41,13 @@ int main(int argc, char ** argv)
     // parse options
     cmnCommandLineOptions options;
     std::string rosNamespace = "/isi";
-    double rosPeriod = 10.0 * cmn_ms;
+    double rosPeriod = 20.0 * cmn_ms; // 
 
     options.AddOptionNoValue("t", "text-only",
                              "text only interface, do not create Qt widgets");
 
     options.AddOptionOneValue("p", "ros-period",
-                              "period in seconds to read all tool positions (default 0.01, 10 ms, 100Hz).  There is no point to have a period higher than the tracker component",
+                              "period in seconds to read all tool positions (default 0.02, 20 ms, 50Hz).  There is no point to have a period higher than the da Vinci",
                               cmnCommandLineOptions::OPTIONAL_OPTION, &rosPeriod);
 
     options.AddOptionOneValue("n", "ros-namespace",
