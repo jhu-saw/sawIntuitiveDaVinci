@@ -446,7 +446,7 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                 jointRef.SetRef(numberOfJoints, streamData.data);
                 arm->StateJoint.Position().Assign(jointRef);
                 // trigger events based on joint values for masters
-                if ((index == MTML1) || (index == MTMR1)) {
+                if (IsMTM(index)) {
                     masterArm = reinterpret_cast<MasterArmData *>(arm);
                     // compute angle on last joint to trigger select event
                     eventCriterion = ((masterArm->StateJoint.Position()[numberOfJoints - 1]) < MasterArmData::SelectAngle);
@@ -547,7 +547,7 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                                     << ManipulatorIndexToString(index) << "\", status: "
                                     << mtsIntuitiveDaVinciUtilities::StatusToString(status) << std::endl;
         } else {
-            if ((index == MTML1) || (index == MTMR1)) {
+            if (IsMTM(index)) {
                 numberOfJoints = GetNumberOfJoints(index) - 1; // MTMs don't report effort on gripper
             } else {
                 numberOfJoints = GetNumberOfJoints(index);

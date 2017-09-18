@@ -272,6 +272,10 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
     void SetupAllInterfaces(void);
     //@}
 
+    inline bool IsMTM(const ManipulatorIndexType index) {
+        return ((index == MTML1) || (index == MTMR1) || (index == MTML2) || (index == MTMR2));
+    }
+
     bool Connected;
 
     unsigned int RateInHz;
