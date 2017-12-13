@@ -23,7 +23,7 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstMultiTask/mtsComponent.h>
 
 #include <cisstParameterTypes/prmPositionCartesianGet.h>
-#include <cisstVector/vctQtWidgetFrame.h>
+#include <cisstParameterTypes/prmPositionCartesianGetQtWidget.h>
 #include <cisstMultiTask/mtsSystemQtWidget.h>
 #include <cisstParameterTypes/prmStateJointQtWidget.h>
 
@@ -64,7 +64,7 @@ private:
     prmPositionCartesianGet PositionCartesian;
     prmStateJoint StateJoint;
 
-    vctQtWidgetFrameDoubleRead * QFRPositionCartesianWidget;
+    prmPositionCartesianGetQtWidget * QPCGWidget;
     prmStateJointQtWidget * QSJWidget;
 
     // Timing & messages

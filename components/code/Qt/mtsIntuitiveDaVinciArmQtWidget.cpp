@@ -97,7 +97,7 @@ void mtsIntuitiveDaVinciArmQtWidget::timerEvent(QTimerEvent * CMN_UNUSED(event))
         CMN_LOG_CLASS_RUN_ERROR << "Manipulator.GetPositionCartesian failed, \""
                                 << executionResult << "\"" << std::endl;
     }
-    QFRPositionCartesianWidget->SetValue(PositionCartesian.Position());
+    QPCGWidget->SetValue(PositionCartesian);
 
     executionResult = Arm.GetStateJoint(StateJoint);
     if (!executionResult) {
@@ -119,8 +119,9 @@ void mtsIntuitiveDaVinciArmQtWidget::setupUi(void)
     mainLayout->addLayout(topLayout);
 
     // 3D position
-    QFRPositionCartesianWidget = new vctQtWidgetFrameDoubleRead(vctQtWidgetRotationDoubleRead::OPENGL_WIDGET);
-    topLayout->addWidget(QFRPositionCartesianWidget);
+    QPCGWidget = new prmPositionCartesianGetQtWidget();
+    QPCGWidget->SetPrismaticRevoluteFactors(1.0 / cmn_mm, cmn180_PI);
+    topLayout->addWidget(QPCGWidget);
 
     // System
     QSysWidget->setupUi();
@@ -128,6 +129,7 @@ void mtsIntuitiveDaVinciArmQtWidget::setupUi(void)
 
     // Joint state
     QSJWidget->setupUi();
+    QSJWidget->SetPrismaticRevoluteFactors(1.0 / cmn_mm, cmn180_PI);
     mainLayout->addWidget(QSJWidget);
 
     setLayout(mainLayout);

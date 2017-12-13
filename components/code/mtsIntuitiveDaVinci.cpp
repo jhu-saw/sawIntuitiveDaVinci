@@ -22,6 +22,7 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstOSAbstraction/osaSleep.h>
 
 #include <cisstMultiTask/mtsInterfaceProvided.h>
+#include <cisstParameterTypes/prmJointType.h>
 
 #include <isi_api.h>
 
@@ -511,10 +512,12 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                 CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: received wrong number of elements for ISI_TIP_TRANSFORM, manipulator \""
                                         << ManipulatorIndexToString(index) << "\", expected 12, received "
                                         << streamData.count << std::endl;
+                arm->PositionCartesian.Valid() = false;
             } else {
                 ISI_TRANSFORM * isiTransform = reinterpret_cast<ISI_TRANSFORM *>(streamData.data);
                 mtsIntuitiveDaVinciUtilities::FrameFromISI(*isiTransform,
                                                            arm->PositionCartesian.Position());
+                arm->PositionCartesian.Valid() = true;
             }
         }
 
@@ -558,11 +561,13 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                                         << ManipulatorIndexToString(index) << "\", expected "
                                         << numberOfJoints << ", received "
                                         << streamData.count << std::endl;
+                arm->StateJoint.Valid() = false;
             } else {
                 // save the joint values
                 vctDynamicConstVectorRef<float> jointTorque;
                 jointTorque.SetRef(numberOfJoints, streamData.data);
                 arm->StateJoint.Effort().Ref(numberOfJoints).Assign(jointTorque); // assign subset of joints (for MTMs)
+                arm->StateJoint.Valid() = true;
             }
         }
 
@@ -627,10 +632,12 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                     CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: received wrong number of elements for ISI_RCM_TRANSFORM, manipulator \""
                                             << ManipulatorIndexToString(index) << "\", expected 12, received "
                                             << streamData.count << std::endl;
+                    slaveArm->PositionCartesianRCM.Valid() = false;
                 } else {
                     ISI_TRANSFORM * isiTransform = reinterpret_cast<ISI_TRANSFORM *>(streamData.data);
                     mtsIntuitiveDaVinciUtilities::FrameFromISI(*isiTransform,
                                                                slaveArm->PositionCartesianRCM.Position());
+                    slaveArm->PositionCartesianRCM.Valid() = true;
                 }
             }
 
@@ -646,10 +653,12 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                     CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: received wrong number of elements for ISI_MOUNT_TRANSFORM, manipulator \""
                                             << ManipulatorIndexToString(index) << "\", expected 12, received "
                                             << streamData.count << std::endl;
+                    slaveArm->PositionCartesianSetup.Valid() = false;
                 } else {
                     ISI_TRANSFORM * isiTransform = reinterpret_cast<ISI_TRANSFORM *>(streamData.data);
                     mtsIntuitiveDaVinciUtilities::FrameFromISI(*isiTransform,
                                                                slaveArm->PositionCartesianSetup.Position());
+                    slaveArm->PositionCartesianSetup.Valid() = true;
                 }
             }
 
@@ -667,11 +676,13 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                                             << ManipulatorIndexToString(index) << "\", expected "
                                             << numberOfJoints << ", received "
                                             << streamData.count << std::endl;
+                    slaveArm->StateSUJ.Valid() = false;
                 } else {
                     // save the joint values
                     vctDynamicConstVectorRef<float> jointPos;
                     jointPos.SetRef(numberOfJoints, streamData.data);
                     slaveArm->StateSUJ.Position().Assign(jointPos);
+                    slaveArm->StateSUJ.Valid() = true;
                 }
             }
         }
@@ -1065,6 +1076,26 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
         arm->ProvidedInterface->AddEventVoid(arm->DataUpdated, "DataUpdated");
         // resize containers for joint information
         numberOfJoints = mtsIntuitiveDaVinci::GetNumberOfJoints(manipulatorIndex);
+        arm->StateJoint.Name().SetSize(numberOfJoints);
+        for (size_t jointIndex = 0; jointIndex < numberOfJoints; ++jointIndex) {
+            std::stringstream ss;
+            ss.str() = "j";
+            ss << jointIndex;
+            arm->StateJoint.Name().at(jointIndex) = ss.str();
+        }
+        arm->StateJoint.Type().SetSize(numberOfJoints);
+        arm->StateJoint.Type().SetAll(PRM_JOINT_REVOLUTE);
+        switch (manipulatorIndex) {
+        case PSM1:
+        case PSM2:
+        case PSM3:
+        case ECM1:
+            arm->StateJoint.Type().at(2) = PRM_JOINT_PRISMATIC;
+            break;
+        default:
+            break;
+        }
+
         arm->StateJoint.Position().SetSize(numberOfJoints);
         arm->StateJoint.Velocity().SetSize(numberOfJoints);
         arm->StateJoint.Effort().SetSize(numberOfJoints);
@@ -1073,6 +1104,26 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
         arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
                                                     arm->DeviceTimestamp, "GetDeviceTimestamp");
         arm->PositionCartesian.SetMovingFrame(mtsIntuitiveDaVinci::ManipulatorIndexToString(manipulatorIndex));
+        switch (manipulatorIndex) {
+        case PSM1:
+        case PSM2:
+        case PSM3:
+            arm->PositionCartesian.SetReferenceFrame("ECM1");
+            break;
+        case ECM1:
+            arm->PositionCartesian.SetReferenceFrame("Cart1");
+            break;
+        case MTML1:
+        case MTMR1:
+            arm->PositionCartesian.SetReferenceFrame("CONSOLE1");
+            break;
+        case MTML2:
+        case MTMR2:
+            arm->PositionCartesian.SetReferenceFrame("CONSOLE2");
+            break;
+        default:
+            break;
+        }
         arm->StateTable->AddData(arm->PositionCartesian, "PositionCartesian");
         arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
                                                     arm->PositionCartesian, "GetPositionCartesian");
@@ -1098,7 +1149,7 @@ void mtsIntuitiveDaVinci::SetupMastersInterfaces(void)
     for (manipulatorIndex = MTML1;
          manipulatorIndex <= MTMR2;
          manipulatorIndex = static_cast<ManipulatorIndexType>(manipulatorIndex + 1)) {
-        // retrieve point to arm from Arms array
+        // retrieve pointer to arm from Arms array
         masterArm = static_cast<MasterArmData *>(this->Arms[manipulatorIndex]);
         CMN_ASSERT(masterArm);
         MasterArms[manipulatorIndex - MTML1] = masterArm;
@@ -1126,20 +1177,35 @@ void mtsIntuitiveDaVinci::SetupSlavesInterfaces(void)
     for (manipulatorIndex = PSM1;
          manipulatorIndex <= ECM1;
          manipulatorIndex = static_cast<ManipulatorIndexType>(manipulatorIndex + 1)) {
-        // retrieve point to arm from Arms array
+        // retrieve pointer to arm from Arms array
         slaveArm = static_cast<SlaveArmData *>(this->Arms[manipulatorIndex]);
         CMN_ASSERT(slaveArm);
         SlaveArms[manipulatorIndex - PSM1] = slaveArm;
+        manipulatorName = mtsIntuitiveDaVinci::ManipulatorIndexToString(manipulatorIndex);
 
         // events and commands specific to slave arms
         // RCM
+        slaveArm->PositionCartesianRCM.SetMovingFrame(manipulatorName + "_RCM");
+        slaveArm->PositionCartesianRCM.SetReferenceFrame("Cart1");
         slaveArm->StateTable->AddData(slaveArm->PositionCartesianRCM, "PositionCartesianRCM");
         slaveArm->ProvidedInterface->AddCommandReadState(*(slaveArm->StateTable),
                                                          slaveArm->PositionCartesianRCM, "GetPositionCartesianRCM");
-        // Setup joints
+        // Setup joints, cartesian
+        slaveArm->PositionCartesianSetup.SetMovingFrame(manipulatorName + "_SUJ");
+        slaveArm->PositionCartesianSetup.SetReferenceFrame("Cart1");
         slaveArm->StateTable->AddData(slaveArm->PositionCartesianSetup, "PositionCartesianSetup");
         slaveArm->ProvidedInterface->AddCommandReadState(*(slaveArm->StateTable),
                                                          slaveArm->PositionCartesianSetup, "GetPositionCartesianSetup");
+        // Setup joints, joint
+        slaveArm->StateSUJ.Name().SetSize(6);
+        for (size_t jointIndex = 0; jointIndex < 6; ++jointIndex) {
+            std::stringstream ss;
+            ss.str() = "j";
+            ss << jointIndex;
+            slaveArm->StateSUJ.Name().at(jointIndex) = ss.str();
+        }
+        slaveArm->StateSUJ.Type().SetSize(6);
+        slaveArm->StateSUJ.Type().SetAll(PRM_JOINT_REVOLUTE);
         slaveArm->StateSUJ.Position().SetSize(6);
         slaveArm->StateTable->AddData(slaveArm->StateSUJ, "StateSUJ");
         slaveArm->ProvidedInterface->AddCommandReadState(*(slaveArm->StateTable),
@@ -1157,7 +1223,7 @@ void mtsIntuitiveDaVinci::SetupCameraInterfaces(void)
     for (manipulatorIndex = ECM1;
          manipulatorIndex <= ECM1;
          manipulatorIndex = static_cast<ManipulatorIndexType>(manipulatorIndex + 1)) {
-        // retrieve point to arm from Arms array
+        // retrieve pointer to arm from Arms array
         cameraArm = static_cast<SlaveArmData *>(this->Arms[manipulatorIndex]);
         CMN_ASSERT(cameraArm);
         CameraArms[manipulatorIndex - ECM1] = cameraArm;
@@ -1207,7 +1273,6 @@ void mtsIntuitiveDaVinci::SetupConsoleInterfaces(void)
     for (manipulatorIndex = CONSOLE1;
          manipulatorIndex <= CONSOLE2;
          manipulatorIndex = static_cast<ManipulatorIndexType>(manipulatorIndex + 1)) {
-
         manipulatorName = mtsIntuitiveDaVinci::ManipulatorIndexToString(manipulatorIndex);
         console = new ConsoleData();
         CMN_ASSERT(console);
