@@ -41,7 +41,8 @@ int main(int argc, char ** argv)
     // parse options
     cmnCommandLineOptions options;
     std::string rosNamespace = "/isi";
-    double rosPeriod = 20.0 * cmn_ms; // 
+    double rosPeriod = 20.0 * cmn_ms; // isi api defined
+    double tfPeriod = 20.0 * cmn_ms;
 
     options.AddOptionNoValue("t", "text-only",
                              "text only interface, do not create Qt widgets");
@@ -49,6 +50,10 @@ int main(int argc, char ** argv)
     options.AddOptionOneValue("p", "ros-period",
                               "period in seconds to read all tool positions (default 0.02, 20 ms, 50Hz).  There is no point to have a period higher than the da Vinci",
                               cmnCommandLineOptions::OPTIONAL_OPTION, &rosPeriod);
+
+    options.AddOptionOneValue("P", "tf-ros-period",
+                              "period in seconds to read all components and broadcast tf2 (default 0.02, 20 ms, 50Hz).  There is no point to have a period higher than the da Vinci",
+                              cmnCommandLineOptions::OPTIONAL_OPTION, &tfPeriod);
 
     options.AddOptionOneValue("n", "ros-namespace",
                               "ROS namespace to prefix all topics, must have start and end \"/\" (default /isi)",
@@ -85,9 +90,13 @@ int main(int argc, char ** argv)
     // ros wrapper
     std::string bridgeName = "sawIntuitiveDaVinci" + rosNamespace;
     std::replace(bridgeName.begin(), bridgeName.end(), '/', '_');
-    mtsROSBridge rosBridge(bridgeName, rosPeriod, true);
-    isi_ros * isiROS = new isi_ros(rosBridge, rosNamespace, daVinci);
-    componentManager->AddComponent(&rosBridge);
+    mtsROSBridge * rosBridge = new mtsROSBridge(bridgeName, rosPeriod, true);
+    mtsROSBridge * tfBridge = new mtsROSBridge(bridgeName + "_tf2", tfPeriod, true);
+
+    isi_ros * isiROS = new isi_ros(rosBridge, tfBridge, rosNamespace, daVinci);
+
+    componentManager->AddComponent(rosBridge);
+    componentManager->AddComponent(tfBridge);
     isiROS->Connect();
 
     //-------------- create the components ------------------

@@ -28,39 +28,23 @@ class mtsROSBridge;
 class isi_ros
 {
 public:
-    isi_ros(mtsROSBridge & bridge,
+    isi_ros(mtsROSBridge * bridge,
+            mtsROSBridge * tf_bridge,
             const std::string & ros_namespace,
             mtsIntuitiveDaVinci * daVinci);
     void Connect(void);
 
 protected:
     std::string mBridgeName;
+    std::string mTfBridgeName;
     std::string mNameSpace;
     mtsIntuitiveDaVinci * mDaVinci;
 
     typedef std::list<std::string> ArmsType;
     ArmsType Arms;
 
-    class ConnectionType {
-    public:
-        inline ConnectionType(const std::string & clientComponentName,
-                              const std::string & clientInterfaceName,
-                              const std::string & serverComponentName,
-                              const std::string & serverInterfaceName):
-            ClientComponentName(clientComponentName),
-            ClientInterfaceName(clientInterfaceName),
-            ServerComponentName(serverComponentName),
-            ServerInterfaceName(serverInterfaceName)
-        {}
-
-        std::string ClientComponentName;
-        std::string ClientInterfaceName;
-        std::string ServerComponentName;
-        std::string ServerInterfaceName;
-    };
-
-    typedef std::list<ConnectionType *> ConnectionsType;
-    ConnectionsType Connections;
+    typedef std::list<std::string> SUJsType;
+    SUJsType SUJs;
 };
 
 #endif // _isi_ros_h

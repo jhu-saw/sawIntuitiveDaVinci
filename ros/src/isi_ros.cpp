@@ -20,7 +20,8 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisst_ros_bridge/mtsROSBridge.h>
 #include <sawIntuitiveDaVinci/mtsIntuitiveDaVinci.h>
 
-isi_ros::isi_ros(mtsROSBridge & bridge,
+isi_ros::isi_ros(mtsROSBridge * bridge,
+                 mtsROSBridge * tf_bridge,
                  const std::string & ros_namespace,
                  mtsIntuitiveDaVinci * daVinci):
     mNameSpace(ros_namespace),
@@ -33,38 +34,63 @@ isi_ros::isi_ros(mtsROSBridge & bridge,
     Arms.push_back("PSM3");
     Arms.push_back("ECM1");
 
-    mBridgeName = bridge.GetName();
+    SUJs.push_back("PSM1");
+    SUJs.push_back("PSM2");
+    SUJs.push_back("PSM3");
+    SUJs.push_back("ECM1");
 
-    ArmsType::const_iterator iter = Arms.begin();
-    const ArmsType::const_iterator end = Arms.end();
+    mBridgeName = bridge->GetName();
+    mTfBridgeName = tf_bridge->GetName();
+
+    ArmsType::const_iterator armIter = Arms.begin();
+    const ArmsType::const_iterator armsEnd = Arms.end();
     for (;
-         iter != end;
-         ++iter) {
-        const std::string arm_namespace = ros_namespace + "/" + *iter;
-        bridge.AddPublisherFromCommandRead<prmStateJoint, sensor_msgs::JointState>
-            (*iter, "GetStateJoint",
+         armIter != armsEnd;
+         ++armIter) {
+        const std::string arm_namespace = ros_namespace + "/" + *armIter;
+        bridge->AddPublisherFromCommandRead<prmStateJoint, sensor_msgs::JointState>
+            (*armIter, "GetStateJoint",
              arm_namespace + "/state_joint_current");
-        bridge.AddPublisherFromCommandRead<prmPositionCartesianGet, geometry_msgs::PoseStamped>
-            (*iter, "GetPositionCartesian",
+        bridge->AddPublisherFromCommandRead<prmPositionCartesianGet, geometry_msgs::PoseStamped>
+            (*armIter, "GetPositionCartesian",
              arm_namespace + "/position_cartesian_current");
-
-        bridge.AddPublisherFromCommandRead<prmVelocityCartesianGet, geometry_msgs::TwistStamped>
-            (*iter, "GetVelocityCartesian",
+        bridge->AddPublisherFromCommandRead<prmVelocityCartesianGet, geometry_msgs::TwistStamped>
+            (*armIter, "GetVelocityCartesian",
              arm_namespace + "/twist_body_current");
 
+        tf_bridge->Addtf2BroadcasterFromCommandRead(*armIter, "GetPositionCartesian");
     }
+
+    SUJsType::const_iterator sujIter = SUJs.begin();
+    const SUJsType::const_iterator sujsEnd = SUJs.end();
+    for (;
+         sujIter != sujsEnd;
+         ++sujIter) {
+        const std::string suj_namespace = ros_namespace + "/SUJ/" + *sujIter;
+        bridge->AddPublisherFromCommandRead<prmStateJoint, sensor_msgs::JointState>
+            (*sujIter, "GetStateJointSetup",
+             suj_namespace + "/state_joint_current");
+        bridge->AddPublisherFromCommandRead<prmPositionCartesianGet, geometry_msgs::PoseStamped>
+            (*sujIter, "GetPositionCartesianRCM",
+             suj_namespace + "/position_cartesian_current");
+
+        tf_bridge->Addtf2BroadcasterFromCommandRead(*sujIter, "GetPositionCartesianRCM");
+    }
+
 }
 
 void isi_ros::Connect(void)
 {
     mtsManagerLocal * componentManager = mtsManagerLocal::GetInstance();
 
-    ArmsType::const_iterator iter = Arms.begin();
-    const ArmsType::const_iterator end = Arms.end();
+    ArmsType::const_iterator armIter = Arms.begin();
+    const ArmsType::const_iterator armsEnd = Arms.end();
     for (;
-         iter != end;
-         ++iter) {
-        componentManager->Connect(mBridgeName, *iter,
-                                  mDaVinci->GetName(), *iter);
+         armIter != armsEnd;
+         ++armIter) {
+        componentManager->Connect(mBridgeName, *armIter,
+                                  mDaVinci->GetName(), *armIter);
+        componentManager->Connect(mTfBridgeName, *armIter,
+                                  mDaVinci->GetName(), *armIter);
     }
 }
