@@ -5,7 +5,7 @@
   Author(s):  Anton Deguet, Nicolas Padoy
   Created on: 2010-04-06
 
-  (C) Copyright 2010-2017 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2010-2018 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -1127,6 +1127,29 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
         arm->StateTable->AddData(arm->PositionCartesian, "PositionCartesian");
         arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
                                                     arm->PositionCartesian, "GetPositionCartesian");
+
+        arm->VelocityCartesian.SetMovingFrame(mtsIntuitiveDaVinci::ManipulatorIndexToString(manipulatorIndex));
+        switch (manipulatorIndex) {
+        case PSM1:
+        case PSM2:
+        case PSM3:
+            arm->VelocityCartesian.SetReferenceFrame("ECM1");
+            break;
+        case ECM1:
+            arm->VelocityCartesian.SetReferenceFrame("Cart1");
+            break;
+        case MTML1:
+        case MTMR1:
+            arm->VelocityCartesian.SetReferenceFrame("CONSOLE1");
+            break;
+        case MTML2:
+        case MTMR2:
+            arm->VelocityCartesian.SetReferenceFrame("CONSOLE2");
+            break;
+        default:
+            break;
+        }
+
         arm->StateTable->AddData(arm->VelocityCartesian, "VelocityCartesian");
         arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
                                                     arm->VelocityCartesian, "GetVelocityCartesian");
