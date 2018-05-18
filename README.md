@@ -1,6 +1,6 @@
 # sawIntuitiveDaVinci
 
-This SAW component contains code for interfacing with many the da Vinci medical robot using the research API (Intuitive Surgical Inc, https://www.intuitivesurgical.com/).  It compiles on Windows and Linux.  It requires the binaries for the ISI Research API as well as a da Vinci robot with the research API activated.  You must have a research agreement in place with ISI for these requirements.
+This SAW component contains code for interfacing with the da Vinci medical robot using the research API (Intuitive Surgical Inc, https://www.intuitivesurgical.com/).  It compiles on Windows and Linux.  It requires the binaries for the ISI Research API as well as a da Vinci robot with the research API activated.  You must have a research agreement in place with ISI for these requirements.
 
 The `ros` folder contains code for a ROS node that interfaces with the sawIntuitiveDaVinci component and publishes the 3D transformations of each arm and setup joints as well as the joint states (position, velocity and effort) and some console events (foot pedals).  It also broadcasts transformations for `tf2`.  To build the ROS node, make sure you use `catkin build`.
 
