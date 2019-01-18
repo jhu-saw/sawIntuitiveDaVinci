@@ -1077,11 +1077,39 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
         // resize containers for joint information
         numberOfJoints = mtsIntuitiveDaVinci::GetNumberOfJoints(manipulatorIndex);
         arm->StateJoint.Name().SetSize(numberOfJoints);
-        for (size_t jointIndex = 0; jointIndex < numberOfJoints; ++jointIndex) {
-            std::stringstream ss;
-            ss.str() = "j";
-            ss << jointIndex;
-            arm->StateJoint.Name().at(jointIndex) = ss.str();
+        switch (manipulatorIndex) {
+        case MTML1:
+        case MTMR1:
+        case MTML2:
+        case MTMR2:
+            arm->StateJoint.Name().at(0) = "outer_yaw";
+            arm->StateJoint.Name().at(1) = "shoulder_pitch";
+            arm->StateJoint.Name().at(2) = "elbow_pitch";
+            arm->StateJoint.Name().at(3) = "wrist_platform";
+            arm->StateJoint.Name().at(4) = "wrist_pitch";
+            arm->StateJoint.Name().at(5) = "wrist_yaw";
+            arm->StateJoint.Name().at(6) = "wrist_roll";
+            arm->StateJoint.Name().at(7) = "finger_grips";
+            break;
+        case PSM1:
+        case PSM2:
+        case PSM3:
+            arm->StateJoint.Name().at(0) = "outer_yaw";
+            arm->StateJoint.Name().at(1) = "outer_pitch";
+            arm->StateJoint.Name().at(2) = "outer_insertion";
+            arm->StateJoint.Name().at(3) = "outer_roll";
+            arm->StateJoint.Name().at(4) = "outer_wrist_pitch";
+            arm->StateJoint.Name().at(5) = "outer_wrist_yaw";
+            arm->StateJoint.Name().at(6) = "jaw";
+            break;
+        case ECM1:
+            arm->StateJoint.Name().at(0) = "outer_yaw";
+            arm->StateJoint.Name().at(1) = "outer_pitch";
+            arm->StateJoint.Name().at(2) = "insertion";
+            arm->StateJoint.Name().at(3) = "outer_roll";
+            break;
+        default:
+            break;
         }
         arm->StateJoint.Type().SetSize(numberOfJoints);
         arm->StateJoint.Type().SetAll(PRM_JOINT_REVOLUTE);
