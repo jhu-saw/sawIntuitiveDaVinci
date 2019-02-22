@@ -5,7 +5,7 @@
   Author(s):  Anton Deguet
   Created on: 2015-05-23
 
-  (C) Copyright 2015-2017 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2015-2019 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -45,6 +45,12 @@ protected:
 
     typedef std::list<std::string> SUJsType;
     SUJsType SUJs;
+
+    typedef std::list<std::string> ConsoleVoidEventsType;
+    ConsoleVoidEventsType ConsoleVoidEvents;
+
+    typedef std::list<std::string> ConsoleButtonEventsType;
+    ConsoleButtonEventsType ConsoleButtonEvents;
 };
 
 #endif // _isi_ros_h

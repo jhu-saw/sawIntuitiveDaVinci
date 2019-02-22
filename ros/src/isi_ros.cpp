@@ -5,7 +5,7 @@
   Author(s):  Anton Deguet
   Created on: 2015-07-18
 
-  (C) Copyright 2015-2017 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2015-2019 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -38,6 +38,18 @@ isi_ros::isi_ros(mtsROSBridge * bridge,
     SUJs.push_back("PSM2");
     SUJs.push_back("PSM3");
     SUJs.push_back("ECM1");
+
+    ConsoleVoidEvents.push_back("HeadIn");
+    ConsoleVoidEvents.push_back("HeadOut");
+    ConsoleVoidEvents.push_back("ClutchQuickTap");
+    ConsoleVoidEvents.push_back("CameraQuickTap");
+
+    ConsoleButtonEvents.push_back("Standby");
+    ConsoleButtonEvents.push_back("Ready");
+    ConsoleButtonEvents.push_back("Clutch");
+    ConsoleButtonEvents.push_back("Camera");
+    ConsoleButtonEvents.push_back("MastersAsMice");
+    ConsoleButtonEvents.push_back("FollowMode");
 
     mBridgeName = bridge->GetName();
     mTfBridgeName = tf_bridge->GetName();
@@ -77,6 +89,33 @@ isi_ros::isi_ros(mtsROSBridge * bridge,
         tf_bridge->Addtf2BroadcasterFromCommandRead(*sujIter, "GetPositionCartesianRCM");
     }
 
+    ConsoleVoidEventsType::const_iterator voidEventsIter = ConsoleVoidEvents.begin();
+    const ConsoleVoidEventsType::const_iterator voidEventsEnd = ConsoleVoidEvents.end();
+    for (;
+         voidEventsIter != voidEventsEnd;
+         ++voidEventsIter) {
+        std::string void_namespace = *voidEventsIter;
+        // put everything lower case
+        std::transform(void_namespace.begin(), void_namespace.end(),
+                       void_namespace.begin(), tolower);
+
+        bridge->AddPublisherFromEventVoid
+            ("Console", *voidEventsIter, ros_namespace + "/console/" + void_namespace);
+    }
+
+    ConsoleButtonEventsType::const_iterator buttonEventsIter = ConsoleButtonEvents.begin();
+    const ConsoleButtonEventsType::const_iterator buttonEventsEnd = ConsoleButtonEvents.end();
+    for (;
+         buttonEventsIter != buttonEventsEnd;
+         ++buttonEventsIter) {
+        std::string button_namespace = *buttonEventsIter;
+        // put everything lower case
+        std::transform(button_namespace.begin(), button_namespace.end(),
+                       button_namespace.begin(), tolower);
+
+        bridge->AddPublisherFromEventWrite<prmEventButton, sensor_msgs::Joy>
+            (*buttonEventsIter, "Button", ros_namespace + "/console/" + button_namespace);
+    }
 }
 
 void isi_ros::Connect(void)
@@ -93,4 +132,16 @@ void isi_ros::Connect(void)
         componentManager->Connect(mTfBridgeName, *armIter,
                                   mDaVinci->GetName(), *armIter);
     }
+
+    ConsoleButtonEventsType::const_iterator buttonEventsIter = ConsoleButtonEvents.begin();
+    const ConsoleButtonEventsType::const_iterator buttonEventsEnd = ConsoleButtonEvents.end();
+    for (;
+         buttonEventsIter != buttonEventsEnd;
+         ++buttonEventsIter) {
+        componentManager->Connect(mBridgeName, *buttonEventsIter,
+                                  mDaVinci->GetName(), *buttonEventsIter);
+    }
+
+    componentManager->Connect(mBridgeName, "Console",
+                              mDaVinci->GetName(), "Console");
 }
