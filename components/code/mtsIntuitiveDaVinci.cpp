@@ -416,6 +416,8 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
 
     bool atLeastOneMasterSelected = false;
     prmEventButton buttonPayload;
+    buttonPayload.SetValid(true);
+    buttonPayload.SetTimestamp(mtsManagerLocal::GetInstance()->GetTimeServer().GetRelativeTime());
 
     // subscribe to the API stream
     for (index = MTML1;
@@ -453,12 +455,12 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                     eventCriterion = ((masterArm->StateJoint.Position()[numberOfJoints - 1]) < MasterArmData::SelectAngle);
                     if (eventCriterion && !masterArm->Selected) {
                         atLeastOneMasterSelected = true;
-                        buttonPayload = prmEventButton::PRESSED;
+                        buttonPayload.SetType(prmEventButton::PRESSED);
                         masterArm->Select(buttonPayload);
                         masterArm->Selected = true;
                         masterArm->ProvidedInterface->SendStatus("Gripper closed");
                     } else if (!eventCriterion && masterArm->Selected) {
-                        buttonPayload = prmEventButton::RELEASED;
+                        buttonPayload.SetType(prmEventButton::RELEASED);
                         masterArm->Select(buttonPayload);
                         masterArm->Selected = false;
                         masterArm->ProvidedInterface->SendStatus("Gripper opened");
@@ -474,12 +476,12 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                         eventCriterion = (fabs((masterArm->StateJoint.Position()[numberOfJoints - 2])
                                                - masterArm->ClutchRestAngle) > MasterArmData::ClutchAngle);
                         if (eventCriterion && !masterArm->Clutched) {
-                            buttonPayload = prmEventButton::PRESSED;
+                            buttonPayload.SetType(prmEventButton::PRESSED);
                             masterArm->Clutch(buttonPayload);
                             masterArm->Clutched = true;
                             masterArm->ProvidedInterface->SendStatus("Clutched");
                         } else if (!eventCriterion && masterArm->Clutched) {
-                            buttonPayload = prmEventButton::RELEASED;
+                            buttonPayload.SetType(prmEventButton::RELEASED);
                             masterArm->Clutch(buttonPayload);
                             masterArm->Clutched = false;
                             masterArm->ProvidedInterface->SendStatus("Unclutched");
@@ -745,6 +747,9 @@ void mtsIntuitiveDaVinci::EventCallback(ManipulatorIndexType manipulatorIndex, i
     (Events.WriteFunctions[eventId])->Execute(v);
 
     prmEventButton buttonPayload;
+    buttonPayload.SetValid(true);
+    buttonPayload.SetTimestamp(mtsManagerLocal::GetInstance()->GetTimeServer().GetRelativeTime());
+
     switch (eventId) {
         // console events
     case ISI_API_MASTER_CLUTCH_ON:
