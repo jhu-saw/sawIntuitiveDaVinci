@@ -63,27 +63,13 @@ int main(int argc, char ** argv)
 
     // custom user component
     if (!managerConfig.empty()) {
-        // extract path of main json config file to search other files relative to it
-        cmnPath configPath(cmnPath::GetWorkingDirectory());
-        std::string fullname = configPath.Find(managerConfig);
-        std::string configDir = fullname.substr(0, fullname.find_last_of('/'));
-        configPath.Add(configDir, cmnPath::TAIL);
-        // open json file
-        std::ifstream jsonStream;
-        jsonStream.open(managerConfig.c_str());
-        Json::Value jsonConfig;
-        Json::Reader jsonReader;
-        if (!jsonReader.parse(jsonStream, jsonConfig)) {
-            CMN_LOG_INIT_ERROR << "Configure: failed to parse configuration" << std::endl
-                               << "File: " << managerConfig << std::endl << "Error(s):" << std::endl
-                               << jsonReader.getFormattedErrorMessages();
-            exit(EXIT_FAILURE);
-        }
-        
-        if (!jsonConfig.empty()) {
-            if (!componentManager->ConfigureJSON(jsonConfig, configPath)) {
+        if (!cmnPath::Exists(managerConfig)) {
+            CMN_LOG_INIT_ERROR << "File " << managerConfig
+                               << " not found!" << std::endl;
+        } else {
+            if (!componentManager->ConfigureJSON(managerConfig)) {
                 CMN_LOG_INIT_ERROR << "Configure: failed to configure component-manager" << std::endl;
-                exit(EXIT_FAILURE);
+                return -1;
             }
         }
     }
