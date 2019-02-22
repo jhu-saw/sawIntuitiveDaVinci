@@ -36,11 +36,10 @@ int main(int argc, char ** argv)
 
     // parse options
     cmnCommandLineOptions options;
-    std::string gcmip = "-1";
-
-    options.AddOptionOneValue("g", "gcmip",
-                              "global component manager IP address",
-                              cmnCommandLineOptions::OPTIONAL_OPTION, &gcmip);
+    std::string managerConfig;
+    options.AddOptionOneValue("c", "component-manager",
+                              "JSON file to configure component manager",
+                              cmnCommandLineOptions::OPTIONAL_OPTION, &managerConfig);
 
     std::string errorMessage;
     if (!options.Parse(argc, argv, errorMessage)) {
@@ -49,18 +48,7 @@ int main(int argc, char ** argv)
         return -1;
     }
 
-    std::string processName = "daVinci";
-    mtsManagerLocal * componentManager = 0;
-    if (gcmip != "-1") {
-        try {
-            componentManager = mtsManagerLocal::GetInstance(gcmip, processName);
-        } catch(...) {
-            std::cerr << "Failed to get GCM instance." << std::endl;
-            return -1;
-        }
-    } else {
-        componentManager = mtsManagerLocal::GetInstance();
-    }
+    mtsManagerLocal * componentManager = mtsManagerLocal::GetInstance();
 
     QApplication application(argc, argv);
 
@@ -73,6 +61,33 @@ int main(int argc, char ** argv)
     daVinciQt->Configure(daVinci);
     daVinciQt->Connect();
 
+    // custom user component
+    if (!managerConfig.empty()) {
+        // extract path of main json config file to search other files relative to it
+        cmnPath configPath(cmnPath::GetWorkingDirectory());
+        std::string fullname = configPath.Find(managerConfig);
+        std::string configDir = fullname.substr(0, fullname.find_last_of('/'));
+        configPath.Add(configDir, cmnPath::TAIL);
+        // open json file
+        std::ifstream jsonStream;
+        jsonStream.open(managerConfig.c_str());
+        Json::Value jsonConfig;
+        Json::Reader jsonReader;
+        if (!jsonReader.parse(jsonStream, jsonConfig)) {
+            CMN_LOG_INIT_ERROR << "Configure: failed to parse configuration" << std::endl
+                               << "File: " << managerConfig << std::endl << "Error(s):" << std::endl
+                               << jsonReader.getFormattedErrorMessages();
+            exit(EXIT_FAILURE);
+        }
+        
+        if (!jsonConfig.empty()) {
+            if (!componentManager->ConfigureJSON(jsonConfig, configPath)) {
+                CMN_LOG_INIT_ERROR << "Configure: failed to configure component-manager" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
+    
     //-------------- create the components ------------------
     componentManager->CreateAllAndWait(2.0 * cmn_s);
     componentManager->StartAllAndWait(2.0 * cmn_s);
