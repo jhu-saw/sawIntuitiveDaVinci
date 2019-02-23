@@ -5,7 +5,7 @@
   Author(s):  Anton Deguet, Nicolas Padoy
   Created on: 2010-04-06
 
-  (C) Copyright 2010-2018 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2010-2019 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -412,7 +412,7 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
     bool eventCriterion;
     ArmData * arm;
     MasterArmData * masterArm;
-    SlaveArmData* slaveArm;
+    SlaveArmData * slaveArm;
 
     bool atLeastOneMasterSelected = false;
     prmEventButton buttonPayload;
@@ -445,14 +445,20 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                                         << numberOfJoints << ", received "
                                         << streamData.count << std::endl;
             } else {
+                arm->StateJoint.Valid() = true;
                 // save the joint values
-                jointRef.SetRef(numberOfJoints, streamData.data);
-                arm->StateJoint.Position().Assign(jointRef);
-                // trigger events based on joint values for masters
-                if (IsMTM(index)) {
+                if (IsECM(index)) {
+                    jointRef.SetRef(numberOfJoints, streamData.data);
+                    arm->StateJoint.Position().Assign(jointRef);
+                } else if (IsMTM(index)) {
                     masterArm = reinterpret_cast<MasterArmData *>(arm);
+                    jointRef.SetRef(numberOfJoints - 1, streamData.data);
+                    masterArm->StateJoint.Position().Assign(jointRef);
+                    masterArm->StateGripper.Position().at(0) = streamData.data[numberOfJoints - 1];
+                    masterArm->StateGripper.Valid() = true;
+
                     // compute angle on last joint to trigger select event
-                    eventCriterion = ((masterArm->StateJoint.Position()[numberOfJoints - 1]) < MasterArmData::SelectAngle);
+                    eventCriterion = (masterArm->StateGripper.Position().at(0) < MasterArmData::SelectAngle);
                     if (eventCriterion && !masterArm->Selected) {
                         atLeastOneMasterSelected = true;
                         buttonPayload.SetType(prmEventButton::PRESSED);
@@ -487,6 +493,12 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                             masterArm->ProvidedInterface->SendStatus("Unclutched");
                         }
                     }
+                } else if (IsPSM(index)) {
+                    slaveArm = reinterpret_cast<SlaveArmData *>(arm);
+                    jointRef.SetRef(numberOfJoints - 1, streamData.data);
+                    slaveArm->StateJoint.Position().Assign(jointRef);
+                    slaveArm->StateJaw.Position().at(0) = streamData.data[numberOfJoints - 1];
+                    slaveArm->StateJaw.Valid() = true;
                 }
             }
         }
@@ -540,8 +552,20 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
             } else {
                 // save the joint values
                 vctDynamicConstVectorRef<float> jointVel;
-                jointVel.SetRef(numberOfJoints, streamData.data);
-                arm->StateJoint.Velocity().Assign(jointVel);
+                if (IsECM(index)) {
+                    jointVel.SetRef(numberOfJoints, streamData.data);
+                    arm->StateJoint.Velocity().Assign(jointVel);
+                } else if (IsMTM(index)) {
+                    masterArm = reinterpret_cast<MasterArmData *>(arm);
+                    jointVel.SetRef(numberOfJoints - 1, streamData.data);
+                    masterArm->StateJoint.Velocity().Assign(jointVel);
+                    masterArm->StateGripper.Velocity().at(0) = streamData.data[numberOfJoints - 1];
+                } else if (IsPSM(index)) {
+                    slaveArm = reinterpret_cast<SlaveArmData *>(arm);
+                    jointVel.SetRef(numberOfJoints - 1, streamData.data);
+                    slaveArm->StateJoint.Velocity().Assign(jointVel);
+                    slaveArm->StateJaw.Velocity().at(0) = streamData.data[numberOfJoints - 1];
+                }
             }
         }
 
@@ -567,9 +591,15 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
             } else {
                 // save the joint values
                 vctDynamicConstVectorRef<float> jointTorque;
-                jointTorque.SetRef(numberOfJoints, streamData.data);
-                arm->StateJoint.Effort().Ref(numberOfJoints).Assign(jointTorque); // assign subset of joints (for MTMs)
-                arm->StateJoint.Valid() = true;
+                if (IsECM(index) || IsMTM(index)) {
+                    jointTorque.SetRef(numberOfJoints, streamData.data);
+                    arm->StateJoint.Effort().Assign(jointTorque);
+                } else if (IsPSM(index)) {
+                    slaveArm = reinterpret_cast<SlaveArmData *>(arm);
+                    jointTorque.SetRef(numberOfJoints - 1, streamData.data);
+                    slaveArm->StateJoint.Effort().Assign(jointTorque);
+                    slaveArm->StateJaw.Effort().at(0) = streamData.data[numberOfJoints - 1];
+                }
             }
         }
 
@@ -1038,6 +1068,8 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
     CMN_LOG_CLASS_INIT_DEBUG << "SetupArmInterfaces: adding interfaces and state tables" << std::endl;
     ManipulatorIndexType manipulatorIndex;
     ArmData * arm;
+    MasterArmData * masterArm;
+    SlaveArmData * slaveArm;
 
     size_t numberOfJoints;
     std::string manipulatorName;
@@ -1049,20 +1081,13 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
         CMN_LOG_CLASS_INIT_DEBUG << "SetupMastersInterfaces: setting up arm \""
                                  << manipulatorName << "\"" << std::endl;
         // create the structure based on arm type
-        switch (manipulatorIndex) {
-        case MTML1:
-        case MTMR1:
-        case MTML2:
-        case MTMR2:
-            arm = new MasterArmData;
-            break;
-        case PSM1:
-        case PSM2:
-        case PSM3:
-        case ECM1:
-            arm = new SlaveArmData;
-            break;
-        default:
+        if (IsMTM(manipulatorIndex)) {
+            masterArm = new MasterArmData;
+            arm = masterArm;
+        } else if (IsPSM(manipulatorIndex) || IsECM(manipulatorIndex)) {
+            slaveArm= new SlaveArmData;
+            arm = slaveArm;
+        } else {
             CMN_LOG_CLASS_INIT_ERROR << "SetupArmInterfaces: invalid manipulator index" << std::endl;
         }
         CMN_ASSERT(arm);
@@ -1082,77 +1107,101 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
         // resize containers for joint information
         numberOfJoints = mtsIntuitiveDaVinci::GetNumberOfJoints(manipulatorIndex);
         arm->StateJoint.Name().SetSize(numberOfJoints);
-        switch (manipulatorIndex) {
-        case MTML1:
-        case MTMR1:
-        case MTML2:
-        case MTMR2:
-            arm->StateJoint.Name().at(0) = "outer_yaw";
-            arm->StateJoint.Name().at(1) = "shoulder_pitch";
-            arm->StateJoint.Name().at(2) = "elbow_pitch";
-            arm->StateJoint.Name().at(3) = "wrist_platform";
-            arm->StateJoint.Name().at(4) = "wrist_pitch";
-            arm->StateJoint.Name().at(5) = "wrist_yaw";
-            arm->StateJoint.Name().at(6) = "wrist_roll";
-            arm->StateJoint.Name().at(7) = "finger_grips";
-            break;
-        case PSM1:
-        case PSM2:
-        case PSM3:
-            arm->StateJoint.Name().at(0) = "outer_yaw";
-            arm->StateJoint.Name().at(1) = "outer_pitch";
-            arm->StateJoint.Name().at(2) = "outer_insertion";
-            arm->StateJoint.Name().at(3) = "outer_roll";
-            arm->StateJoint.Name().at(4) = "outer_wrist_pitch";
-            arm->StateJoint.Name().at(5) = "outer_wrist_yaw";
-            arm->StateJoint.Name().at(6) = "jaw";
-            break;
-        case ECM1:
+
+        if (IsMTM(manipulatorIndex)) {
+            // kinematic
+            masterArm->StateJoint.Name().SetSize(numberOfJoints - 1);
+            masterArm->StateJoint.Type().SetSize(numberOfJoints - 1);
+            masterArm->StateJoint.Position().SetSize(numberOfJoints - 1);
+            masterArm->StateJoint.Velocity().SetSize(numberOfJoints - 1);
+            masterArm->StateJoint.Effort().SetSize(numberOfJoints - 1);
+            masterArm->StateJoint.Name().at(0) = "outer_yaw";
+            masterArm->StateJoint.Name().at(1) = "shoulder_pitch";
+            masterArm->StateJoint.Name().at(2) = "elbow_pitch";
+            masterArm->StateJoint.Name().at(3) = "wrist_platform";
+            masterArm->StateJoint.Name().at(4) = "wrist_pitch";
+            masterArm->StateJoint.Name().at(5) = "wrist_yaw";
+            masterArm->StateJoint.Name().at(6) = "wrist_roll";
+            // gripper
+            masterArm->StateGripper.Name().SetSize(1);
+            masterArm->StateGripper.Type().SetSize(1);
+            masterArm->StateGripper.Position().SetSize(1);
+            masterArm->StateGripper.Velocity().SetSize(1);
+            masterArm->StateGripper.Effort().SetSize(0); // MTM doesn't report effort on gripper
+            masterArm->StateGripper.Name().at(0) = "finger_grips";
+            masterArm->StateTable->AddData(masterArm->StateGripper, "StateGripper");
+            masterArm->ProvidedInterface->AddCommandReadState(*(masterArm->StateTable),
+                                                              masterArm->StateGripper,
+                                                              "GetStateGripper");
+        } else if (IsPSM(manipulatorIndex)) {
+            // kinematic
+            slaveArm->StateJoint.Name().SetSize(numberOfJoints - 1);
+            slaveArm->StateJoint.Type().SetSize(numberOfJoints - 1);
+            slaveArm->StateJoint.Position().SetSize(numberOfJoints - 1);
+            slaveArm->StateJoint.Velocity().SetSize(numberOfJoints - 1);
+            slaveArm->StateJoint.Effort().SetSize(numberOfJoints - 1);
+            slaveArm->StateJoint.Name().at(0) = "outer_yaw";
+            slaveArm->StateJoint.Name().at(1) = "outer_pitch";
+            slaveArm->StateJoint.Name().at(2) = "outer_insertion";
+            slaveArm->StateJoint.Name().at(3) = "outer_roll";
+            slaveArm->StateJoint.Name().at(4) = "outer_wrist_pitch";
+            slaveArm->StateJoint.Name().at(5) = "outer_wrist_yaw";
+            // jaw
+            slaveArm->StateJaw.Name().SetSize(1);
+            slaveArm->StateJaw.Type().SetSize(1);
+            slaveArm->StateJaw.Position().SetSize(1);
+            slaveArm->StateJaw.Velocity().SetSize(1);
+            slaveArm->StateJaw.Effort().SetSize(1);
+            slaveArm->StateJaw.Name().at(0) = "jaw";
+            slaveArm->StateTable->AddData(slaveArm->StateJaw, "StateJaw");
+            slaveArm->ProvidedInterface->AddCommandReadState(*(slaveArm->StateTable),
+                                                              slaveArm->StateJaw,
+                                                              "GetStateJaw");
+        } else if (IsECM(manipulatorIndex)) {
+            // kinematic only
+            arm->StateJoint.Name().SetSize(numberOfJoints);
+            arm->StateJoint.Type().SetSize(numberOfJoints);
+            arm->StateJoint.Position().SetSize(numberOfJoints);
+            arm->StateJoint.Velocity().SetSize(numberOfJoints);
+            arm->StateJoint.Effort().SetSize(numberOfJoints);
             arm->StateJoint.Name().at(0) = "outer_yaw";
             arm->StateJoint.Name().at(1) = "outer_pitch";
             arm->StateJoint.Name().at(2) = "insertion";
             arm->StateJoint.Name().at(3) = "outer_roll";
-            break;
-        default:
-            break;
-        }
-        arm->StateJoint.Type().SetSize(numberOfJoints);
-        arm->StateJoint.Type().SetAll(PRM_JOINT_REVOLUTE);
-        switch (manipulatorIndex) {
-        case PSM1:
-        case PSM2:
-        case PSM3:
-        case ECM1:
-            arm->StateJoint.Type().at(2) = PRM_JOINT_PRISMATIC;
-            break;
-        default:
-            break;
         }
 
-        arm->StateJoint.Position().SetSize(numberOfJoints);
-        arm->StateJoint.Velocity().SetSize(numberOfJoints);
-        arm->StateJoint.Effort().SetSize(numberOfJoints);
+        // joint type
+        arm->StateJoint.Type().SetAll(PRM_JOINT_REVOLUTE);
+        if (IsPSM(manipulatorIndex) || IsECM(manipulatorIndex)) {
+            arm->StateJoint.Type().at(2) = PRM_JOINT_PRISMATIC;
+        }
+
         // add to state table and provided interface
         arm->StateTable->AddData(arm->DeviceTimestamp, "DeviceTimestamp");
         arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
                                                     arm->DeviceTimestamp, "GetDeviceTimestamp");
         arm->PositionCartesian.SetMovingFrame(mtsIntuitiveDaVinci::ManipulatorIndexToString(manipulatorIndex));
+        arm->VelocityCartesian.SetMovingFrame(mtsIntuitiveDaVinci::ManipulatorIndexToString(manipulatorIndex));
         switch (manipulatorIndex) {
         case PSM1:
         case PSM2:
         case PSM3:
             arm->PositionCartesian.SetReferenceFrame("ECM1");
+            arm->VelocityCartesian.SetReferenceFrame("ECM1");
             break;
         case ECM1:
             arm->PositionCartesian.SetReferenceFrame("Cart1");
+            arm->VelocityCartesian.SetReferenceFrame("Cart1");
             break;
         case MTML1:
         case MTMR1:
             arm->PositionCartesian.SetReferenceFrame("CONSOLE1");
+            arm->VelocityCartesian.SetReferenceFrame("CONSOLE1");
             break;
         case MTML2:
         case MTMR2:
             arm->PositionCartesian.SetReferenceFrame("CONSOLE2");
+            arm->VelocityCartesian.SetReferenceFrame("CONSOLE2");
             break;
         default:
             break;
@@ -1160,29 +1209,6 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
         arm->StateTable->AddData(arm->PositionCartesian, "PositionCartesian");
         arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
                                                     arm->PositionCartesian, "GetPositionCartesian");
-
-        arm->VelocityCartesian.SetMovingFrame(mtsIntuitiveDaVinci::ManipulatorIndexToString(manipulatorIndex));
-        switch (manipulatorIndex) {
-        case PSM1:
-        case PSM2:
-        case PSM3:
-            arm->VelocityCartesian.SetReferenceFrame("ECM1");
-            break;
-        case ECM1:
-            arm->VelocityCartesian.SetReferenceFrame("Cart1");
-            break;
-        case MTML1:
-        case MTMR1:
-            arm->VelocityCartesian.SetReferenceFrame("CONSOLE1");
-            break;
-        case MTML2:
-        case MTMR2:
-            arm->VelocityCartesian.SetReferenceFrame("CONSOLE2");
-            break;
-        default:
-            break;
-        }
-
         arm->StateTable->AddData(arm->VelocityCartesian, "VelocityCartesian");
         arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
                                                     arm->VelocityCartesian, "GetVelocityCartesian");

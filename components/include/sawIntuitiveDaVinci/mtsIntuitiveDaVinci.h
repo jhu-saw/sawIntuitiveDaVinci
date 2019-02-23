@@ -5,7 +5,7 @@
   Author(s):  Anton Deguet, Nicolas Padoy
   Created on: 2010-04-06
 
-  (C) Copyright 2010-2017 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2010-2019 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -140,6 +140,7 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
     public:
         MasterArmData(void);
         mtsInterfaceProvided * SelectEventProvidedInterface;
+        prmStateJoint StateGripper;
         mtsFunctionWrite Select;
         bool Selected;
         static const double SelectAngle;
@@ -155,6 +156,7 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
     class SlaveArmData: public ArmData {
     public:
         SlaveArmData(void);
+        prmStateJoint StateJaw;
         prmPositionCartesianGet PositionCartesianRCM;
         prmPositionCartesianGet PositionCartesianSetup;
         prmStateJoint StateSUJ;
@@ -272,8 +274,16 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
     void SetupAllInterfaces(void);
     //@}
 
-    inline bool IsMTM(const ManipulatorIndexType index) {
+    inline bool IsMTM(const ManipulatorIndexType index) const {
         return ((index == MTML1) || (index == MTMR1) || (index == MTML2) || (index == MTMR2));
+    }
+
+    inline bool IsPSM(const ManipulatorIndexType index) const {
+        return ((index == PSM1) || (index == PSM2) || (index == PSM3));
+    }
+
+    inline bool IsECM(const ManipulatorIndexType index) const {
+        return (index == ECM1);
     }
 
     bool Connected;

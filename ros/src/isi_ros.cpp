@@ -70,6 +70,16 @@ isi_ros::isi_ros(mtsROSBridge * bridge,
             (*armIter, "GetVelocityCartesian",
              arm_namespace + "/twist_body_current");
 
+        // MTM specific
+        if ((*armIter == "MTML1") || (*armIter == "MTMR1")) {
+            bridge->AddPublisherFromCommandRead<prmStateJoint, sensor_msgs::JointState>
+                (*armIter, "GetStateGripper",
+                 arm_namespace + "/state_gripper_current");
+        } else if ((*armIter == "PSM1") || (*armIter == "PSM2") || (*armIter == "PSM3")) {
+            bridge->AddPublisherFromCommandRead<prmStateJoint, sensor_msgs::JointState>
+                (*armIter, "GetStateJaw",
+                 arm_namespace + "/state_jaw_current");
+        }
         tf_bridge->Addtf2BroadcasterFromCommandRead(*armIter, "GetPositionCartesian");
     }
 
