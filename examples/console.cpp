@@ -37,7 +37,7 @@ int main(int argc, char ** argv)
     // parse options
     cmnCommandLineOptions options;
     std::string managerConfig;
-    options.AddOptionOneValue("c", "component-manager",
+    options.AddOptionOneValue("m", "component-manager",
                               "JSON file to configure component manager",
                               cmnCommandLineOptions::OPTIONAL_OPTION, &managerConfig);
 
