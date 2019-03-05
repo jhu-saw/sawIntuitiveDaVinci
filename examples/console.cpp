@@ -4,7 +4,7 @@
   Author(s):  Anton Deguet
   Created on: 2013-02-07
 
-  (C) Copyright 2013-2017 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2013-2019 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -20,6 +20,7 @@ http://www.cisst.org/cisst/license.txt.
 
 // cisst/saw
 #include <cisstCommon/cmnCommandLineOptions.h>
+#include <cisstCommon/cmnGetChar.h>
 #include <sawIntuitiveDaVinci/mtsIntuitiveDaVinci.h>
 #include <sawIntuitiveDaVinci/mtsIntuitiveDaVinciQt.h>
 
@@ -37,6 +38,10 @@ int main(int argc, char ** argv)
     // parse options
     cmnCommandLineOptions options;
     std::string managerConfig;
+
+    options.AddOptionNoValue("t", "text-only",
+                             "text only interface, do not create Qt widgets");
+
     options.AddOptionOneValue("m", "component-manager",
                               "JSON file to configure component manager",
                               cmnCommandLineOptions::OPTIONAL_OPTION, &managerConfig);
@@ -48,18 +53,24 @@ int main(int argc, char ** argv)
         return -1;
     }
 
-    mtsManagerLocal * componentManager = mtsManagerLocal::GetInstance();
+    const bool hasQt = !options.IsSet("text-only");
 
-    QApplication application(argc, argv);
+    mtsManagerLocal * componentManager = mtsManagerLocal::GetInstance();
 
     // daVinci wrapper
     mtsIntuitiveDaVinci * daVinci = new mtsIntuitiveDaVinci("daVinci", 50 /* Hz */);
     daVinci->Configure();
     componentManager->AddComponent(daVinci);
 
-    mtsIntuitiveDaVinciQt * daVinciQt = new mtsIntuitiveDaVinciQt();
-    daVinciQt->Configure(daVinci);
-    daVinciQt->Connect();
+    // add all Qt widgets if needed
+    QApplication * application = 0;
+    mtsIntuitiveDaVinciQt * daVinciQt = 0;
+    if (hasQt) {
+        application = new QApplication(argc, argv);
+        daVinciQt = new mtsIntuitiveDaVinciQt();
+        daVinciQt->Configure(daVinci);
+        daVinciQt->Connect();
+    }
 
     // custom user component
     if (!managerConfig.empty()) {
@@ -73,12 +84,18 @@ int main(int argc, char ** argv)
             }
         }
     }
-    
+
     //-------------- create the components ------------------
     componentManager->CreateAllAndWait(2.0 * cmn_s);
     componentManager->StartAllAndWait(2.0 * cmn_s);
 
-    application.exec();
+    if (hasQt) {
+        application->exec();
+    } else {
+        do {
+            std::cout << "Press 'q' to quit" << std::endl;
+        } while (cmnGetChar() != 'q');
+    }
 
     componentManager->KillAllAndWait(2.0 * cmn_s);
     componentManager->Cleanup();

@@ -7,7 +7,7 @@
             "class-name": "mtsSocketStreamer",
             "constructor-arg": {
                 "Name": "streamerPSM1",
-                "Period": 0.01
+                "Period": 0.015
             },
             "configure-parameter": "streamerPSM1.json"
         }
@@ -17,7 +17,7 @@
             "class-name": "mtsSocketStreamer",
             "constructor-arg": {
                 "Name": "streamerPSM2",
-                "Period": 0.01
+                "Period": 0.015
             },
             "configure-parameter": "streamerPSM2.json"
         }
@@ -27,7 +27,7 @@
             "class-name": "mtsSocketStreamer",
             "constructor-arg": {
                 "Name": "streamerECM1",
-                "Period": 0.01
+                "Period": 0.015
             },
             "configure-parameter": "streamerECM1.json"
         }
