@@ -37,14 +37,15 @@ int main(int argc, char ** argv)
 
     // parse options
     cmnCommandLineOptions options;
-    std::string managerConfig;
+    typedef std::list<std::string> managerConfigType;
+    managerConfigType managerConfig;
 
     options.AddOptionNoValue("t", "text-only",
                              "text only interface, do not create Qt widgets");
 
-    options.AddOptionOneValue("m", "component-manager",
-                              "JSON file to configure component manager",
-                              cmnCommandLineOptions::OPTIONAL_OPTION, &managerConfig);
+    options.AddOptionMultipleValues("m", "component-manager",
+                                    "JSON file to configure component manager",
+                                    cmnCommandLineOptions::OPTIONAL_OPTION, &managerConfig);
 
     std::string errorMessage;
     if (!options.Parse(argc, argv, errorMessage)) {
@@ -73,14 +74,19 @@ int main(int argc, char ** argv)
     }
 
     // custom user component
-    if (!managerConfig.empty()) {
-        if (!cmnPath::Exists(managerConfig)) {
-            CMN_LOG_INIT_ERROR << "File " << managerConfig
-                               << " not found!" << std::endl;
-        } else {
-            if (!componentManager->ConfigureJSON(managerConfig)) {
-                CMN_LOG_INIT_ERROR << "Configure: failed to configure component-manager" << std::endl;
-                return -1;
+    const managerConfigType::iterator end = managerConfig.end();
+    for (managerConfigType::iterator iter = managerConfig.begin();
+         iter != end;
+         ++iter) {
+        if (!iter->empty()) {
+            if (!cmnPath::Exists(*iter)) {
+                CMN_LOG_INIT_ERROR << "File " << *iter
+                                   << " not found!" << std::endl;
+            } else {
+                if (!componentManager->ConfigureJSON(*iter)) {
+                    CMN_LOG_INIT_ERROR << "Configure: failed to configure component-manager" << std::endl;
+                    return -1;
+                }
             }
         }
     }
