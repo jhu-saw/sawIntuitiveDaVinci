@@ -7,7 +7,7 @@
             "class-name": "mtsSocketStreamer",
             "constructor-arg": {
                 "Name": "streamerPSM1",
-                "Period": 0.015
+                "Period": 0.01
             },
             "configure-parameter": "streamerPSM1.json"
         }
@@ -17,7 +17,7 @@
             "class-name": "mtsSocketStreamer",
             "constructor-arg": {
                 "Name": "streamerPSM2",
-                "Period": 0.015
+                "Period": 0.01
             },
             "configure-parameter": "streamerPSM2.json"
         }
@@ -27,9 +27,29 @@
             "class-name": "mtsSocketStreamer",
             "constructor-arg": {
                 "Name": "streamerECM1",
-                "Period": 0.015
+                "Period": 0.01
             },
             "configure-parameter": "streamerECM1.json"
+        }
+        ,
+        {
+            "shared-library": "sawSocketStreamer",
+            "class-name": "mtsSocketStreamer",
+            "constructor-arg": {
+                "Name": "streamerMTML1",
+                "Period": 0.01
+            },
+            "configure-parameter": "streamerMTML1.json"
+        }
+        ,
+        {
+            "shared-library": "sawSocketStreamer",
+            "class-name": "mtsSocketStreamer",
+            "constructor-arg": {
+                "Name": "streamerMTMR1",
+                "Period": 0.01
+            },
+            "configure-parameter": "streamerMTMR1.json"
         }
     ]
     ,
@@ -68,6 +88,30 @@
             "provided": {
                 "component": "daVinci",
                 "interface": "ECM1"
+            }
+        }
+        ,
+        {
+            "required": {
+                "component": "streamerMTML1",
+                "interface": "Required"
+            }
+            ,
+            "provided": {
+                "component": "daVinci",
+                "interface": "MTML1"
+            }
+        }
+        ,
+        {
+            "required": {
+                "component": "streamerMTMR1",
+                "interface": "Required"
+            }
+            ,
+            "provided": {
+                "component": "daVinci",
+                "interface": "MTMR1"
             }
         }
     ]
