@@ -19,7 +19,7 @@ set (REQUIRED_CISST_LIBRARIES cisstCommon
                               cisstMultiTask
                               cisstParameterTypes)
 
-find_package (cisst 1.0.10 REQUIRED ${REQUIRED_CISST_LIBRARIES})
+find_package (cisst 1.0.11 REQUIRED ${REQUIRED_CISST_LIBRARIES})
 
 if (cisst_FOUND_AS_REQUIRED)
 
@@ -50,7 +50,7 @@ if (cisst_FOUND_AS_REQUIRED)
 
     # Set the version number
     set (sawIntuitiveDaVinci_VERSION_MAJOR "1")
-    set (sawIntuitiveDaVinci_VERSION_MINOR "1")
+    set (sawIntuitiveDaVinci_VERSION_MINOR "2")
     set (sawIntuitiveDaVinci_VERSION_PATCH "0")
     set (sawIntuitiveDaVinci_VERSION "${sawIntuitiveDaVinci_VERSION_MAJOR}.${sawIntuitiveDaVinci_VERSION_MINOR}.${sawIntuitiveDaVinci_VERSION_PATCH}")
 

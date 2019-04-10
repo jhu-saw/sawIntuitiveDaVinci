@@ -34,7 +34,7 @@ set (REQUIRED_CISST_LIBRARIES
      cisstQt)
 
 # find cisst and make sure the required libraries have been compiled
-find_package (cisst 1.0.10 REQUIRED ${REQUIRED_CISST_LIBRARIES})
+find_package (cisst 1.0.11 REQUIRED ${REQUIRED_CISST_LIBRARIES})
 
 if (cisst_FOUND_AS_REQUIRED)
 
@@ -51,7 +51,7 @@ if (cisst_FOUND_AS_REQUIRED)
                   LIBRARIES isi_ros
                   CATKIN_DEPENDS cisst_ros_bridge geometry_msgs roscpp std_msgs)
 
-  find_package (sawIntuitiveDaVinci 1.1.0)
+  find_package (sawIntuitiveDaVinci 1.2.0)
 
   if (sawIntuitiveDaVinci_FOUND)
 
