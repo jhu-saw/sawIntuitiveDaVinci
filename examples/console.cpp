@@ -24,9 +24,6 @@ http://www.cisst.org/cisst/license.txt.
 #include <sawIntuitiveDaVinci/mtsIntuitiveDaVinci.h>
 #include <sawIntuitiveDaVinci/mtsIntuitiveDaVinciQt.h>
 
-#include <cisst_ros_bridge/mtsROSBridge.h>
-#include <isi_ros/isi_ros.h>
-
 #include <QApplication>
 
 int main(int argc, char ** argv)
@@ -40,29 +37,14 @@ int main(int argc, char ** argv)
 
     // parse options
     cmnCommandLineOptions options;
-    std::string rosNamespace = "isi";
-    double rosPeriod = 20.0 * cmn_ms; // isi api defined
-    double tfPeriod = 20.0 * cmn_ms;
+    typedef std::list<std::string> managerConfigType;
+    managerConfigType managerConfig;
 
     options.AddOptionNoValue("t", "text-only",
                              "text only interface, do not create Qt widgets");
 
-    options.AddOptionOneValue("p", "ros-period",
-                              "period in seconds to read all tool positions (default 0.02, 20 ms, 50Hz).  There is no point to have a period higher than the da Vinci",
-                              cmnCommandLineOptions::OPTIONAL_OPTION, &rosPeriod);
-
-    options.AddOptionOneValue("P", "tf-ros-period",
-                              "period in seconds to read all components and broadcast tf2 (default 0.02, 20 ms, 50Hz).  There is no point to have a period higher than the da Vinci",
-                              cmnCommandLineOptions::OPTIONAL_OPTION, &tfPeriod);
-
-    options.AddOptionOneValue("n", "ros-namespace",
-                              "ROS namespace to prefix all topics, must have start and end \"/\" (default /isi)",
-                              cmnCommandLineOptions::OPTIONAL_OPTION, &rosNamespace);
-
-    typedef std::list<std::string> managerConfigType;
-    managerConfigType managerConfig;
     options.AddOptionMultipleValues("m", "component-manager",
-                                    "JSON file to configure component manager",
+                                    "JSON files to configure component manager",
                                     cmnCommandLineOptions::OPTIONAL_OPTION, &managerConfig);
 
     std::string errorMessage;
@@ -75,7 +57,6 @@ int main(int argc, char ** argv)
     const bool hasQt = !options.IsSet("text-only");
 
     mtsManagerLocal * componentManager = mtsManagerLocal::GetInstance();
-
 
     // daVinci wrapper
     mtsIntuitiveDaVinci * daVinci = new mtsIntuitiveDaVinci("daVinci", 50 /* Hz */);
@@ -92,30 +73,19 @@ int main(int argc, char ** argv)
         daVinciQt->Connect();
     }
 
-    // ros wrapper
-    std::string bridgeName = "sawIntuitiveDaVinci" + rosNamespace;
-    std::replace(bridgeName.begin(), bridgeName.end(), '/', '_');
-    mtsROSBridge * rosBridge = new mtsROSBridge(bridgeName, rosPeriod, true);
-    mtsROSBridge * tfBridge = new mtsROSBridge(bridgeName + "_tf2", tfPeriod, true);
-
-    isi_ros * isiROS = new isi_ros(rosBridge, tfBridge, rosNamespace, daVinci);
-
-    componentManager->AddComponent(rosBridge);
-    componentManager->AddComponent(tfBridge);
-    isiROS->Connect();
-
     // custom user component
-    const managerConfigType::iterator end = managerConfig.end();
-    for (managerConfigType::iterator iter = managerConfig.begin();
-         iter != end;
-         ++iter) {
-        if (!iter->empty()) {
-            if (!cmnPath::Exists(*iter)) {
-                CMN_LOG_INIT_ERROR << "File " << *iter
+    const managerConfigType::iterator endConfig = managerConfig.end();
+    for (managerConfigType::iterator iterConfig = managerConfig.begin();
+         iterConfig != endConfig;
+         ++iterConfig) {
+        if (!iterConfig->empty()) {
+            if (!cmnPath::Exists(*iterConfig)) {
+                CMN_LOG_INIT_ERROR << "File " << *iterConfig
                                    << " not found!" << std::endl;
             } else {
-                if (!componentManager->ConfigureJSON(*iter)) {
-                    CMN_LOG_INIT_ERROR << "Configure: failed to configure component-manager" << std::endl;
+                if (!componentManager->ConfigureJSON(*iterConfig)) {
+                    CMN_LOG_INIT_ERROR << "Configure: failed to configure component-manager for "
+                                       << *iterConfig << std::endl;
                     return -1;
                 }
             }
@@ -137,9 +107,7 @@ int main(int argc, char ** argv)
     componentManager->KillAllAndWait(2.0 * cmn_s);
     componentManager->Cleanup();
 
-    if (daVinciQt) {
-        delete daVinciQt;
-    }
+    delete daVinciQt;
     delete daVinci;
 
     // stop all logs

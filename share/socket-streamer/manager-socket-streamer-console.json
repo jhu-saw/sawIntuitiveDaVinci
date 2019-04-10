@@ -1,0 +1,52 @@
+/* -*- Mode: Javascript; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+{
+    "components":
+    [
+        {
+            "shared-library": "sawSocketStreamer",
+            "class-name": "mtsSocketStreamer",
+            "constructor-arg": {
+                "Name": "streamerMTML1",
+                "Period": 0.01
+            },
+            "configure-parameter": "streamerMTML1.json"
+        }
+        ,
+        {
+            "shared-library": "sawSocketStreamer",
+            "class-name": "mtsSocketStreamer",
+            "constructor-arg": {
+                "Name": "streamerMTMR1",
+                "Period": 0.01
+            },
+            "configure-parameter": "streamerMTMR1.json"
+        }
+    ]
+    ,
+    "connections":
+    [
+        {
+            "required": {
+                "component": "streamerMTML1",
+                "interface": "Required"
+            }
+            ,
+            "provided": {
+                "component": "daVinci",
+                "interface": "MTML1"
+            }
+        }
+        ,
+        {
+            "required": {
+                "component": "streamerMTMR1",
+                "interface": "Required"
+            }
+            ,
+            "provided": {
+                "component": "daVinci",
+                "interface": "MTMR1"
+            }
+        }
+    ]
+}
