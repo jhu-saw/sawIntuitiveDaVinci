@@ -38,6 +38,12 @@ int main(int argc, char ** argv)
     cmnLogger::SetMaskClass("mtsIntuitiveDaVinci", CMN_LOG_ALLOW_ALL);
     cmnLogger::AddChannel(std::cerr, CMN_LOG_ALLOW_ERRORS_AND_WARNINGS);
 
+    // ---- WARNING: hack to remove ros args ----
+    ros::V_string argout;
+    ros::removeROSArgs(argc, argv, argout);
+    argc = argout.size();
+    // ------------------------------------------
+
     // parse options
     cmnCommandLineOptions options;
     std::string rosNamespace = "isi";
