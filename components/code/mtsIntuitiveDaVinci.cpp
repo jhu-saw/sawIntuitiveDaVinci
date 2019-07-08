@@ -792,11 +792,13 @@ void mtsIntuitiveDaVinci::EventCallback(ManipulatorIndexType manipulatorIndex, i
         switch (manipulatorIndex) {
         case MTML1:
         case MTMR1:
+        case CONSOLE1:
             this->Consoles[0]->Clutch(buttonPayload);
             this->Consoles[0]->Clutched = true;
             break;
         case MTML2:
         case MTMR2:
+        case CONSOLE2:
             this->Consoles[1]->Clutch(buttonPayload);
             this->Consoles[1]->Clutched = true;
             break;
@@ -817,11 +819,13 @@ void mtsIntuitiveDaVinci::EventCallback(ManipulatorIndexType manipulatorIndex, i
         switch (manipulatorIndex) {
         case MTML1:
         case MTMR1:
+        case CONSOLE1:
             this->Consoles[0]->Clutch(buttonPayload);
             this->Consoles[0]->Clutched = true;
             break;
         case MTML2:
         case MTMR2:
+        case CONSOLE2:
             this->Consoles[1]->Clutch(buttonPayload);
             this->Consoles[1]->Clutched = true;
             break;
@@ -862,7 +866,7 @@ void mtsIntuitiveDaVinci::EventCallback(ManipulatorIndexType manipulatorIndex, i
         buttonPayload.SetType(prmEventButton::RELEASED);
         this->Console.FollowMode(buttonPayload);
         this->Arms[manipulatorIndex]->FollowMode(buttonPayload);
-        break;        
+        break;
     case ISI_API_MTM_GRIP_A_UP:
     case ISI_API_MTM_GRIP_B_UP:
         buttonPayload.SetType(prmEventButton::RELEASED);
