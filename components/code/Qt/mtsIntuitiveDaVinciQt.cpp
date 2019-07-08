@@ -5,7 +5,7 @@
   Author(s):  Anton Deguet
   Created on: 2015-07-13
 
-  (C) Copyright 2015-2017 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2015-2019 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -76,8 +76,7 @@ void mtsIntuitiveDaVinciQt::Configure(mtsIntuitiveDaVinci * daVinci)
     buttons.push_back("MTML1Clutch");
     buttons.push_back("MTMR1Select");
     buttons.push_back("MTMR1Clutch");
-    buttons.push_back("Standby");
-    buttons.push_back("Ready");
+    buttons.push_back("OperatorPresent");
     buttons.push_back("Clutch");
     buttons.push_back("Camera");
     buttons.push_back("FollowMode");

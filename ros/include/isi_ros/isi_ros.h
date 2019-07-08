@@ -40,17 +40,20 @@ protected:
     std::string mNameSpace;
     mtsIntuitiveDaVinci * mDaVinci;
 
+    typedef std::list<std::string> VoidEventsType;
+    VoidEventsType ConsoleVoidEvents;
+
+    typedef std::list<std::string> ButtonEventsType;
+    ButtonEventsType ConsoleButtonEvents;
+
     typedef std::list<std::string> ArmsType;
     ArmsType Arms;
+    ArmsType MTMs;
+
+    ButtonEventsType MTMsButtonEvents;
 
     typedef std::list<std::string> SUJsType;
     SUJsType SUJs;
-
-    typedef std::list<std::string> ConsoleVoidEventsType;
-    ConsoleVoidEventsType ConsoleVoidEvents;
-
-    typedef std::list<std::string> ConsoleButtonEventsType;
-    ConsoleButtonEventsType ConsoleButtonEvents;
 };
 
 #endif // _isi_ros_h

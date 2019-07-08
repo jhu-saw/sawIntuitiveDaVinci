@@ -230,8 +230,7 @@ mtsIntuitiveDaVinci::SlaveArmData::SlaveArmData(void)
 
 mtsIntuitiveDaVinci::ConsoleData::ConsoleData(void):
     ProvidedInterface(0),
-    StandbyProvidedInterface(0),
-    ReadyProvidedInterface(0),
+    OperatorPresentProvidedInterface(0),
     ClutchProvidedInterface(0),
     Clutched(false),
     CameraProvidedInterface(0),
@@ -839,9 +838,13 @@ void mtsIntuitiveDaVinci::EventCallback(ManipulatorIndexType manipulatorIndex, i
         break;
     case ISI_API_HEAD_IN:
         this->Console.HeadIn();
+        buttonPayload.SetType(prmEventButton::PRESSED);
+        this->Console.OperatorPresent(buttonPayload);
         break;
     case ISI_API_HEAD_OUT:
         this->Console.HeadOut();
+        buttonPayload.SetType(prmEventButton::RELEASED);
+        this->Console.OperatorPresent(buttonPayload);
         break;
     case ISI_API_ARM_SWAP:
         this->Console.ClutchQuickTap();
@@ -856,6 +859,16 @@ void mtsIntuitiveDaVinci::EventCallback(ManipulatorIndexType manipulatorIndex, i
     case ISI_API_FOLLOWING_OFF:
         buttonPayload.SetType(prmEventButton::RELEASED);
         this->Console.FollowMode(buttonPayload);
+        break;        
+    case ISI_API_MTM_GRIP_A_UP:
+    case ISI_API_MTM_GRIP_B_UP:
+        buttonPayload.SetType(prmEventButton::RELEASED);
+        this->MasterArms[manipulatorIndex - MTML1]->Clutch(buttonPayload);
+        break;
+    case ISI_API_MTM_GRIP_A_DOWN:
+    case ISI_API_MTM_GRIP_B_DOWN:
+        buttonPayload.SetType(prmEventButton::PRESSED);
+        this->MasterArms[manipulatorIndex - MTML1]->Clutch(buttonPayload);
         break;
 
     default:
@@ -1325,13 +1338,9 @@ void mtsIntuitiveDaVinci::SetupConsoleInterfaces(void)
     Console.ProvidedInterface->AddEventVoid(Console.ClutchQuickTap, "ClutchQuickTap");
     Console.ProvidedInterface->AddEventVoid(Console.CameraQuickTap, "CameraQuickTap");
 
-    Console.StandbyProvidedInterface = this->AddInterfaceProvided("Standby");
-    CMN_ASSERT(Console.StandbyProvidedInterface);
-    Console.StandbyProvidedInterface->AddEventWrite(Console.Standby, "Button", prmEventButton());
-
-    Console.ReadyProvidedInterface = this->AddInterfaceProvided("Ready");
-    CMN_ASSERT(Console.ReadyProvidedInterface);
-    Console.ReadyProvidedInterface->AddEventWrite(Console.Ready, "Button", prmEventButton());
+    Console.OperatorPresentProvidedInterface = this->AddInterfaceProvided("OperatorPresent");
+    CMN_ASSERT(Console.OperatorPresentProvidedInterface);
+    Console.OperatorPresentProvidedInterface->AddEventWrite(Console.OperatorPresent, "Button", prmEventButton());
 
     Console.ClutchProvidedInterface = this->AddInterfaceProvided("Clutch");
     CMN_ASSERT(Console.ClutchProvidedInterface);

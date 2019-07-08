@@ -173,11 +173,8 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
         mtsFunctionVoid ClutchQuickTap;
         mtsFunctionVoid CameraQuickTap;
 
-        mtsInterfaceProvided * StandbyProvidedInterface;
-        mtsFunctionWrite Standby;
-
-        mtsInterfaceProvided * ReadyProvidedInterface;
-        mtsFunctionWrite Ready;
+        mtsInterfaceProvided * OperatorPresentProvidedInterface;
+        mtsFunctionWrite OperatorPresent;
 
         mtsInterfaceProvided * ClutchProvidedInterface;
         mtsFunctionWrite Clutch;
