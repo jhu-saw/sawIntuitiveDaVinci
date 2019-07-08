@@ -46,6 +46,8 @@ isi_ros::isi_ros(mtsROSBridge * bridge,
     MTMsButtonEvents.push_back("Select");
     MTMsButtonEvents.push_back("Clutch");
 
+    ArmsButtonEvents.push_back("FollowMode");
+
     ConsoleVoidEvents.push_back("HeadIn");
     ConsoleVoidEvents.push_back("HeadOut");
     ConsoleVoidEvents.push_back("ClutchQuickTap");
@@ -76,7 +78,7 @@ isi_ros::isi_ros(mtsROSBridge * bridge,
             (*armIter, "GetVelocityCartesian",
              arm_namespace + "/twist_body_current");
 
-        // MTM specific
+        // MTM/PSM specific
         if ((*armIter == "MTML1") || (*armIter == "MTMR1")) {
             bridge->AddPublisherFromCommandRead<prmStateJoint, sensor_msgs::JointState>
                 (*armIter, "GetStateGripper",
@@ -86,7 +88,21 @@ isi_ros::isi_ros(mtsROSBridge * bridge,
                 (*armIter, "GetStateJaw",
                  arm_namespace + "/state_jaw_current");
         }
+
+        // tf2
         tf_bridge->Addtf2BroadcasterFromCommandRead(*armIter, "GetPositionCartesian");
+
+        // arm events
+        ButtonEventsType::const_iterator buttonEventsIter = ArmsButtonEvents.begin();
+        const ButtonEventsType::const_iterator buttonEventsEnd = ArmsButtonEvents.end();
+        for (;
+             buttonEventsIter != buttonEventsEnd;
+             ++buttonEventsIter) {
+            bridge->AddPublisherFromEventWrite<prmEventButton, sensor_msgs::Joy>
+                (*armIter + *buttonEventsIter, "Button",
+                 arm_namespace + "/" + cmnStringToUnderscoreLower(*buttonEventsIter));
+        }
+
     }
 
     // MTM events
@@ -157,6 +173,14 @@ void isi_ros::Connect(void)
                                   mDaVinci->GetName(), *armIter);
         componentManager->Connect(mTfBridgeName, *armIter,
                                   mDaVinci->GetName(), *armIter);
+        ButtonEventsType::const_iterator buttonEventsIter = ArmsButtonEvents.begin();
+        const ButtonEventsType::const_iterator buttonEventsEnd = ArmsButtonEvents.end();
+        for (;
+             buttonEventsIter != buttonEventsEnd;
+             ++buttonEventsIter) {
+            componentManager->Connect(mBridgeName, *armIter + *buttonEventsIter,
+                                      mDaVinci->GetName(), *armIter + *buttonEventsIter);
+        }
     }
 
     ArmsType::const_iterator mtmIter = MTMs.begin();

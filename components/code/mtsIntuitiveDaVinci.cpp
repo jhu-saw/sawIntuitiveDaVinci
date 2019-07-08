@@ -209,7 +209,8 @@ namespace mtsIntuitiveDaVinciUtilities
 
 mtsIntuitiveDaVinci::ArmData::ArmData(void):
     StateTable(0),
-    ProvidedInterface(0)
+    ProvidedInterface(0),
+    FollowModeProvidedInterface(0)
 {}
 
 
@@ -217,9 +218,9 @@ const double mtsIntuitiveDaVinci::MasterArmData::SelectAngle = 0.2;
 const double mtsIntuitiveDaVinci::MasterArmData::ClutchAngle = 0.7;
 
 mtsIntuitiveDaVinci::MasterArmData::MasterArmData(void):
-    SelectEventProvidedInterface(0),
+    SelectProvidedInterface(0),
     Selected(false),
-    ClutchEventProvidedInterface(0),
+    ClutchProvidedInterface(0),
     ClutchRestAngleNeedsUpdate(false),
     Clutched(false)
 {}
@@ -855,10 +856,12 @@ void mtsIntuitiveDaVinci::EventCallback(ManipulatorIndexType manipulatorIndex, i
     case ISI_API_FOLLOWING_ON:
         buttonPayload.SetType(prmEventButton::PRESSED);
         this->Console.FollowMode(buttonPayload);
+        this->Arms[manipulatorIndex]->FollowMode(buttonPayload);
         break;
     case ISI_API_FOLLOWING_OFF:
         buttonPayload.SetType(prmEventButton::RELEASED);
         this->Console.FollowMode(buttonPayload);
+        this->Arms[manipulatorIndex]->FollowMode(buttonPayload);
         break;        
     case ISI_API_MTM_GRIP_A_UP:
     case ISI_API_MTM_GRIP_B_UP:
@@ -1231,6 +1234,11 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
         arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
                                                     arm->StateTable->PeriodStats,
                                                     "GetPeriodStatistics");
+
+        // follow mode button interface and event
+        arm->FollowModeProvidedInterface = this->AddInterfaceProvided(manipulatorName + "FollowMode");
+        CMN_ASSERT(arm->FollowModeProvidedInterface);
+        arm->FollowModeProvidedInterface->AddEventWrite(arm->FollowMode, "Button", prmEventButton());
     }
 }
 
@@ -1251,13 +1259,13 @@ void mtsIntuitiveDaVinci::SetupMastersInterfaces(void)
         // events and commands specific to master arms
         manipulatorName = mtsIntuitiveDaVinci::ManipulatorIndexToString(manipulatorIndex);
         // select button interface and event
-        masterArm->SelectEventProvidedInterface = this->AddInterfaceProvided(manipulatorName + "Select");
-        CMN_ASSERT(masterArm->SelectEventProvidedInterface);
-        masterArm->SelectEventProvidedInterface->AddEventWrite(masterArm->Select, "Button", prmEventButton());
+        masterArm->SelectProvidedInterface = this->AddInterfaceProvided(manipulatorName + "Select");
+        CMN_ASSERT(masterArm->SelectProvidedInterface);
+        masterArm->SelectProvidedInterface->AddEventWrite(masterArm->Select, "Button", prmEventButton());
         // clutch button interface and event
-        masterArm->ClutchEventProvidedInterface = this->AddInterfaceProvided(manipulatorName + "Clutch");
-        CMN_ASSERT(masterArm->ClutchEventProvidedInterface);
-        masterArm->ClutchEventProvidedInterface->AddEventWrite(masterArm->Clutch, "Button", prmEventButton());
+        masterArm->ClutchProvidedInterface = this->AddInterfaceProvided(manipulatorName + "Clutch");
+        CMN_ASSERT(masterArm->ClutchProvidedInterface);
+        masterArm->ClutchProvidedInterface->AddEventWrite(masterArm->Clutch, "Button", prmEventButton());
     }
 }
 

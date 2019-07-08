@@ -51,6 +51,7 @@ protected:
     ArmsType MTMs;
 
     ButtonEventsType MTMsButtonEvents;
+    ButtonEventsType ArmsButtonEvents;
 
     typedef std::list<std::string> SUJsType;
     SUJsType SUJs;

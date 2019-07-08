@@ -73,9 +73,14 @@ void mtsIntuitiveDaVinciQt::Configure(mtsIntuitiveDaVinci * daVinci)
     // Event (Buttons only)
     std::vector<std::string> buttons;
     buttons.push_back("MTML1Select");
-    buttons.push_back("MTML1Clutch");
     buttons.push_back("MTMR1Select");
+    buttons.push_back("MTML1Clutch");
     buttons.push_back("MTMR1Clutch");
+    buttons.push_back("MTML1FollowMode");
+    buttons.push_back("MTMR1FollowMode");
+    buttons.push_back("PSM1FollowMode");
+    buttons.push_back("PSM2FollowMode");
+    buttons.push_back("PSM3FollowMode");
     buttons.push_back("OperatorPresent");
     buttons.push_back("Clutch");
     buttons.push_back("Camera");

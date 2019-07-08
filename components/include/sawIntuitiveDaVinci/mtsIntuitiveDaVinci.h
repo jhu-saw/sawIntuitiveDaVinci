@@ -133,18 +133,20 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
         prmPositionCartesianGet PositionCartesian;
         prmVelocityCartesianGet VelocityCartesian;
         prmStateJoint StateJoint;
+        mtsInterfaceProvided * FollowModeProvidedInterface;
+        mtsFunctionWrite FollowMode;
     };
 
     /*! Class to contain the data specific to the master arms */
     class MasterArmData: public ArmData {
     public:
         MasterArmData(void);
-        mtsInterfaceProvided * SelectEventProvidedInterface;
+        mtsInterfaceProvided * SelectProvidedInterface;
         prmStateJoint StateGripper;
         mtsFunctionWrite Select;
         bool Selected;
         static const double SelectAngle;
-        mtsInterfaceProvided * ClutchEventProvidedInterface;
+        mtsInterfaceProvided * ClutchProvidedInterface;
         mtsFunctionWrite Clutch;
         bool ClutchRestAngleNeedsUpdate;
         double ClutchRestAngle;
