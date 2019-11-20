@@ -27,6 +27,7 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstParameterTypes/prmPositionCartesianGet.h>
 #include <cisstParameterTypes/prmVelocityCartesianGet.h>
 #include <cisstParameterTypes/prmStateJoint.h>
+#include <cisstParameterTypes/prmConfigurationJoint.h>
 #include <cisstParameterTypes/prmEventButton.h>
 #include <cisstParameterTypes/prmPositionCartesianSet.h>
 
@@ -127,12 +128,14 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
     public:
         ArmData(void);
         mtsStateTable * StateTable;
+        mtsStateTable * ConfigurationStateTable;
         mtsInterfaceProvided * ProvidedInterface;
         mtsFunctionVoid DataUpdated;
         mtsFloat DeviceTimestamp;
         prmPositionCartesianGet PositionCartesian;
         prmVelocityCartesianGet VelocityCartesian;
         prmStateJoint StateJoint;
+        prmConfigurationJoint ConfigurationJoint;
         mtsInterfaceProvided * FollowModeProvidedInterface;
         mtsFunctionWrite FollowMode;
     };
@@ -143,6 +146,7 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
         MasterArmData(void);
         mtsInterfaceProvided * SelectProvidedInterface;
         prmStateJoint StateGripper;
+        prmConfigurationJoint ConfigurationGripper;
         mtsFunctionWrite Select;
         bool Selected;
         static const double SelectAngle;
@@ -159,9 +163,11 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
     public:
         SlaveArmData(void);
         prmStateJoint StateJaw;
+        prmConfigurationJoint ConfigurationJaw;
         prmPositionCartesianGet PositionCartesianRCM;
         prmPositionCartesianGet PositionCartesianSetup;
         prmStateJoint StateSUJ;
+        prmConfigurationJoint ConfigurationSUJ;
     };
 
     /*! Class to contain data specific to the console */

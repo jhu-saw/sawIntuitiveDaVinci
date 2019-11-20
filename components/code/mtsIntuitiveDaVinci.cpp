@@ -21,6 +21,7 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstCommon/cmnUnits.h>
 #include <cisstOSAbstraction/osaSleep.h>
 
+#include <cisstMultiTask/mtsManagerLocal.h>
 #include <cisstMultiTask/mtsInterfaceProvided.h>
 #include <cisstParameterTypes/prmJointType.h>
 
@@ -209,6 +210,7 @@ namespace mtsIntuitiveDaVinciUtilities
 
 mtsIntuitiveDaVinci::ArmData::ArmData(void):
     StateTable(0),
+    ConfigurationStateTable(0),
     ProvidedInterface(0),
     FollowModeProvidedInterface(0)
 {}
@@ -1117,6 +1119,11 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
         CMN_ASSERT(arm->StateTable);
         this->AddStateTable(arm->StateTable, true);
         arm->StateTable->SetAutomaticAdvance(false);
+        // add configuration state table
+        arm->ConfigurationStateTable = new mtsStateTable(10, manipulatorName + "Configuration");
+        CMN_ASSERT(arm->ConfigurationStateTable);
+        this->AddStateTable(arm->ConfigurationStateTable, true);
+        arm->ConfigurationStateTable->SetAutomaticAdvance(false);
         // add a provided interface
         arm->ProvidedInterface = this->AddInterfaceProvided(manipulatorName);
         CMN_ASSERT(arm->ProvidedInterface);
@@ -1130,70 +1137,87 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
 
         if (IsMTM(manipulatorIndex)) {
             // kinematic
-            masterArm->StateJoint.Name().SetSize(numberOfJoints - 1);
-            masterArm->StateJoint.Type().SetSize(numberOfJoints - 1);
+            masterArm->ConfigurationJoint.Name().SetSize(numberOfJoints - 1);
+            masterArm->ConfigurationJoint.Type().SetSize(numberOfJoints - 1);
+            masterArm->ConfigurationJoint.Name().at(0) = "outer_yaw";
+            masterArm->ConfigurationJoint.Name().at(1) = "shoulder_pitch";
+            masterArm->ConfigurationJoint.Name().at(2) = "elbow_pitch";
+            masterArm->ConfigurationJoint.Name().at(3) = "wrist_platform";
+            masterArm->ConfigurationJoint.Name().at(4) = "wrist_pitch";
+            masterArm->ConfigurationJoint.Name().at(5) = "wrist_yaw";
+            masterArm->ConfigurationJoint.Name().at(6) = "wrist_roll";
+            masterArm->StateJoint.Name().ForceAssign(masterArm->ConfigurationJoint.Name());
             masterArm->StateJoint.Position().SetSize(numberOfJoints - 1);
             masterArm->StateJoint.Velocity().SetSize(numberOfJoints - 1);
             masterArm->StateJoint.Effort().SetSize(numberOfJoints - 1);
-            masterArm->StateJoint.Name().at(0) = "outer_yaw";
-            masterArm->StateJoint.Name().at(1) = "shoulder_pitch";
-            masterArm->StateJoint.Name().at(2) = "elbow_pitch";
-            masterArm->StateJoint.Name().at(3) = "wrist_platform";
-            masterArm->StateJoint.Name().at(4) = "wrist_pitch";
-            masterArm->StateJoint.Name().at(5) = "wrist_yaw";
-            masterArm->StateJoint.Name().at(6) = "wrist_roll";
             // gripper
-            masterArm->StateGripper.Name().SetSize(1);
-            masterArm->StateGripper.Type().SetSize(1);
+            masterArm->ConfigurationGripper.Name().SetSize(1);
+            masterArm->ConfigurationGripper.Type().SetSize(1);
+            masterArm->ConfigurationGripper.Name().at(0) = "finger_grips";
+            masterArm->ConfigurationGripper.Type().at(0) = PRM_JOINT_REVOLUTE;
+            masterArm->ConfigurationStateTable->AddData(masterArm->ConfigurationGripper,
+                                                        "ConfigurationGripper");
+            masterArm->ProvidedInterface->AddCommandReadState(*(masterArm->ConfigurationStateTable),
+                                                              masterArm->ConfigurationGripper,
+                                                              "GetConfigurationGripper");
+            masterArm->StateGripper.Name().ForceAssign(masterArm->ConfigurationGripper.Name());
             masterArm->StateGripper.Position().SetSize(1);
             masterArm->StateGripper.Velocity().SetSize(1);
             masterArm->StateGripper.Effort().SetSize(0); // MTM doesn't report effort on gripper
-            masterArm->StateGripper.Name().at(0) = "finger_grips";
             masterArm->StateTable->AddData(masterArm->StateGripper, "StateGripper");
             masterArm->ProvidedInterface->AddCommandReadState(*(masterArm->StateTable),
                                                               masterArm->StateGripper,
                                                               "GetStateGripper");
         } else if (IsPSM(manipulatorIndex)) {
             // kinematic
-            slaveArm->StateJoint.Name().SetSize(numberOfJoints - 1);
-            slaveArm->StateJoint.Type().SetSize(numberOfJoints - 1);
+            slaveArm->ConfigurationJoint.Name().SetSize(numberOfJoints - 1);
+            slaveArm->ConfigurationJoint.Type().SetSize(numberOfJoints - 1);
+            slaveArm->ConfigurationJoint.Name().at(0) = "outer_yaw";
+            slaveArm->ConfigurationJoint.Name().at(1) = "outer_pitch";
+            slaveArm->ConfigurationJoint.Name().at(2) = "outer_insertion";
+            slaveArm->ConfigurationJoint.Name().at(3) = "outer_roll";
+            slaveArm->ConfigurationJoint.Name().at(4) = "outer_wrist_pitch";
+            slaveArm->ConfigurationJoint.Name().at(5) = "outer_wrist_yaw";
+            slaveArm->StateJoint.Name().ForceAssign(slaveArm->ConfigurationJoint.Name());
             slaveArm->StateJoint.Position().SetSize(numberOfJoints - 1);
             slaveArm->StateJoint.Velocity().SetSize(numberOfJoints - 1);
             slaveArm->StateJoint.Effort().SetSize(numberOfJoints - 1);
-            slaveArm->StateJoint.Name().at(0) = "outer_yaw";
-            slaveArm->StateJoint.Name().at(1) = "outer_pitch";
-            slaveArm->StateJoint.Name().at(2) = "outer_insertion";
-            slaveArm->StateJoint.Name().at(3) = "outer_roll";
-            slaveArm->StateJoint.Name().at(4) = "outer_wrist_pitch";
-            slaveArm->StateJoint.Name().at(5) = "outer_wrist_yaw";
             // jaw
-            slaveArm->StateJaw.Name().SetSize(1);
-            slaveArm->StateJaw.Type().SetSize(1);
+            slaveArm->ConfigurationJaw.Name().SetSize(1);
+            slaveArm->ConfigurationJaw.Type().SetSize(1);
+            slaveArm->ConfigurationJaw.Name().at(0) = "jaw";
+            slaveArm->ConfigurationJaw.Type().at(0) = PRM_JOINT_REVOLUTE;
+            slaveArm->ConfigurationStateTable->AddData(slaveArm->ConfigurationJaw,
+                                                       "ConfigurationJaw");
+            slaveArm->ProvidedInterface->AddCommandReadState(*(slaveArm->ConfigurationStateTable),
+                                                             slaveArm->ConfigurationJaw,
+                                                             "GetConfigurationJaw");
+            slaveArm->StateJaw.Name().ForceAssign(slaveArm->ConfigurationJaw.Name());
             slaveArm->StateJaw.Position().SetSize(1);
             slaveArm->StateJaw.Velocity().SetSize(1);
             slaveArm->StateJaw.Effort().SetSize(1);
-            slaveArm->StateJaw.Name().at(0) = "jaw";
             slaveArm->StateTable->AddData(slaveArm->StateJaw, "StateJaw");
             slaveArm->ProvidedInterface->AddCommandReadState(*(slaveArm->StateTable),
                                                               slaveArm->StateJaw,
                                                               "GetStateJaw");
         } else if (IsECM(manipulatorIndex)) {
             // kinematic only
-            arm->StateJoint.Name().SetSize(numberOfJoints);
-            arm->StateJoint.Type().SetSize(numberOfJoints);
+            arm->ConfigurationJoint.Name().SetSize(numberOfJoints);
+            arm->ConfigurationJoint.Type().SetSize(numberOfJoints);
+            arm->ConfigurationJoint.Name().at(0) = "outer_yaw";
+            arm->ConfigurationJoint.Name().at(1) = "outer_pitch";
+            arm->ConfigurationJoint.Name().at(2) = "insertion";
+            arm->ConfigurationJoint.Name().at(3) = "outer_roll";
+            arm->StateJoint.Name().ForceAssign(arm->ConfigurationJoint.Name());
             arm->StateJoint.Position().SetSize(numberOfJoints);
             arm->StateJoint.Velocity().SetSize(numberOfJoints);
             arm->StateJoint.Effort().SetSize(numberOfJoints);
-            arm->StateJoint.Name().at(0) = "outer_yaw";
-            arm->StateJoint.Name().at(1) = "outer_pitch";
-            arm->StateJoint.Name().at(2) = "insertion";
-            arm->StateJoint.Name().at(3) = "outer_roll";
         }
 
         // joint type
-        arm->StateJoint.Type().SetAll(PRM_JOINT_REVOLUTE);
+        arm->ConfigurationJoint.Type().SetAll(PRM_JOINT_REVOLUTE);
         if (IsPSM(manipulatorIndex) || IsECM(manipulatorIndex)) {
-            arm->StateJoint.Type().at(2) = PRM_JOINT_PRISMATIC;
+            arm->ConfigurationJoint.Type().at(2) = PRM_JOINT_PRISMATIC;
         }
 
         // add to state table and provided interface
@@ -1232,6 +1256,10 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
         arm->StateTable->AddData(arm->VelocityCartesian, "VelocityCartesian");
         arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
                                                     arm->VelocityCartesian, "GetVelocityCartesian");
+        arm->ConfigurationStateTable->AddData(arm->ConfigurationJoint, "ConfigurationJoint");
+        arm->ConfigurationStateTable->Advance(); // to make sure latest values are "published"
+        arm->ProvidedInterface->AddCommandReadState(*(arm->ConfigurationStateTable),
+                                                    arm->ConfigurationJoint, "GetConfigurationJoint");
         arm->StateTable->AddData(arm->StateJoint, "StateJoint");
         arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
                                                     arm->StateJoint, "GetStateJoint");
@@ -1304,15 +1332,20 @@ void mtsIntuitiveDaVinci::SetupSlavesInterfaces(void)
         slaveArm->ProvidedInterface->AddCommandReadState(*(slaveArm->StateTable),
                                                          slaveArm->PositionCartesianSetup, "GetPositionCartesianSetup");
         // Setup joints, joint
-        slaveArm->StateSUJ.Name().SetSize(6);
+        slaveArm->ConfigurationSUJ.Name().SetSize(6);
         for (size_t jointIndex = 0; jointIndex < 6; ++jointIndex) {
             std::stringstream ss;
             ss.str() = "j";
             ss << jointIndex;
-            slaveArm->StateSUJ.Name().at(jointIndex) = ss.str();
+            slaveArm->ConfigurationSUJ.Name().at(jointIndex) = ss.str();
         }
-        slaveArm->StateSUJ.Type().SetSize(6);
-        slaveArm->StateSUJ.Type().SetAll(PRM_JOINT_REVOLUTE);
+        slaveArm->ConfigurationSUJ.Type().SetSize(6);
+        slaveArm->ConfigurationSUJ.Type().SetAll(PRM_JOINT_REVOLUTE);
+        slaveArm->ConfigurationSUJ.Type().at(0) = PRM_JOINT_PRISMATIC;
+        slaveArm->ConfigurationStateTable->AddData(slaveArm->ConfigurationSUJ, "ConfigurationSUJ");
+        slaveArm->ProvidedInterface->AddCommandReadState(*(slaveArm->ConfigurationStateTable),
+                                                         slaveArm->ConfigurationSUJ, "GetConfigurationJointSetup");
+        slaveArm->StateSUJ.Name().ForceAssign(slaveArm->ConfigurationSUJ.Name());
         slaveArm->StateSUJ.Position().SetSize(6);
         slaveArm->StateTable->AddData(slaveArm->StateSUJ, "StateSUJ");
         slaveArm->ProvidedInterface->AddCommandReadState(*(slaveArm->StateTable),

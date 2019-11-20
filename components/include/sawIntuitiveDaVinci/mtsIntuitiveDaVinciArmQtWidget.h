@@ -5,7 +5,7 @@
   Author(s):  Anton Deguet
   Created on: 2013-08-24
 
-  (C) Copyright 2013-2017 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2013-2019 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -57,12 +57,14 @@ protected:
     struct ArmStruct {
         mtsFunctionRead GetPositionCartesian;
         mtsFunctionRead GetStateJoint;
+        mtsFunctionRead GetConfigurationJoint;
         mtsFunctionRead GetPeriodStatistics;
     } Arm;
 
 private:
     prmPositionCartesianGet PositionCartesian;
     prmStateJoint StateJoint;
+    prmConfigurationJoint ConfigurationJoint;
 
     prmPositionCartesianGetQtWidget * QPCGWidget;
     prmStateJointQtWidget * QSJWidget;

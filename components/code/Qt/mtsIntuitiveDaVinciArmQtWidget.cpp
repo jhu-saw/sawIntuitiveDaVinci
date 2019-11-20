@@ -5,7 +5,7 @@
   Author(s):  Anton Deguet
   Created on: 2013-08-24
 
-  (C) Copyright 2013-2017 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2013-2019 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -43,8 +43,8 @@ mtsIntuitiveDaVinciArmQtWidget::mtsIntuitiveDaVinciArmQtWidget(const std::string
     mtsInterfaceRequired * interfaceRequired = AddInterfaceRequired("Manipulator");
     if (interfaceRequired) {
         interfaceRequired->AddFunction("GetPositionCartesian", Arm.GetPositionCartesian);
+        interfaceRequired->AddFunction("GetConfigurationJoint", Arm.GetConfigurationJoint);
         interfaceRequired->AddFunction("GetStateJoint", Arm.GetStateJoint);
-
         QSysWidget->SetInterfaceRequired(interfaceRequired);
         interfaceRequired->AddFunction("GetPeriodStatistics", Arm.GetPeriodStatistics);
     }
@@ -100,9 +100,13 @@ void mtsIntuitiveDaVinciArmQtWidget::timerEvent(QTimerEvent * CMN_UNUSED(event))
     QPCGWidget->SetValue(PositionCartesian);
 
     executionResult = Arm.GetStateJoint(StateJoint);
-    if (!executionResult) {
-        CMN_LOG_CLASS_RUN_ERROR << "Manipulator.GetStateJoint failed, \""
-                                << executionResult << "\"" << std::endl;
+    if (executionResult) {
+        if ((ConfigurationJoint.Name().size() != StateJoint.Name().size())
+            && (Arm.GetConfigurationJoint.IsValid())) {
+            Arm.GetConfigurationJoint(ConfigurationJoint);
+            QSJWidget->SetConfiguration(ConfigurationJoint);
+        }
+        QSJWidget->SetValue(StateJoint);
     }
     QSJWidget->SetValue(StateJoint);
 
