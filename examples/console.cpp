@@ -21,6 +21,7 @@ http://www.cisst.org/cisst/license.txt.
 // cisst/saw
 #include <cisstCommon/cmnCommandLineOptions.h>
 #include <cisstCommon/cmnGetChar.h>
+#include <cisstMultiTask/mtsManagerLocal.h>
 #include <sawIntuitiveDaVinci/mtsIntuitiveDaVinci.h>
 #include <sawIntuitiveDaVinci/mtsIntuitiveDaVinciQt.h>
 
