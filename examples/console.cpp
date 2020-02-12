@@ -4,7 +4,7 @@
   Author(s):  Anton Deguet
   Created on: 2013-02-07
 
-  (C) Copyright 2013-2019 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2013-2020 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -21,6 +21,7 @@ http://www.cisst.org/cisst/license.txt.
 // cisst/saw
 #include <cisstCommon/cmnCommandLineOptions.h>
 #include <cisstCommon/cmnGetChar.h>
+#include <cisstCommon/cmnQt.h>
 #include <cisstMultiTask/mtsManagerLocal.h>
 #include <sawIntuitiveDaVinci/mtsIntuitiveDaVinci.h>
 #include <sawIntuitiveDaVinci/mtsIntuitiveDaVinciQt.h>
@@ -48,6 +49,9 @@ int main(int argc, char ** argv)
                                     "JSON files to configure component manager",
                                     cmnCommandLineOptions::OPTIONAL_OPTION, &managerConfig);
 
+    options.AddOptionNoValue("D", "dark-mode",
+                             "replaces the default Qt palette with darker colors");
+
     std::string errorMessage;
     if (!options.Parse(argc, argv, errorMessage)) {
         std::cerr << "Error: " << errorMessage << std::endl;
@@ -69,6 +73,10 @@ int main(int argc, char ** argv)
     mtsIntuitiveDaVinciQt * daVinciQt = 0;
     if (hasQt) {
         application = new QApplication(argc, argv);
+        cmnQt::QApplicationExitsOnCtrlC();
+        if (options.IsSet("dark-mode")) {
+            cmnQt::SetDarkMode();
+        }
         daVinciQt = new mtsIntuitiveDaVinciQt();
         daVinciQt->Configure(daVinci);
         daVinciQt->Connect();

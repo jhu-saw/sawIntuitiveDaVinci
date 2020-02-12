@@ -5,7 +5,7 @@
   Author(s):  Anton Deguet
   Created on: 2015-05-23
 
-  (C) Copyright 2015-2019 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2015-2020 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -30,14 +30,12 @@ class isi_ros
 public:
     isi_ros(mtsROSBridge * bridge,
             mtsROSBridge * tf_bridge,
-            const std::string & ros_namespace,
             mtsIntuitiveDaVinci * daVinci);
     void Connect(void);
 
 protected:
     std::string mBridgeName;
     std::string mTfBridgeName;
-    std::string mNameSpace;
     mtsIntuitiveDaVinci * mDaVinci;
 
     typedef std::list<std::string> VoidEventsType;

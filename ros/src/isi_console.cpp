@@ -4,7 +4,7 @@
   Author(s):  Anton Deguet
   Created on: 2013-02-07
 
-  (C) Copyright 2013-2019 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2013-2020 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -21,6 +21,7 @@ http://www.cisst.org/cisst/license.txt.
 // cisst/saw
 #include <cisstCommon/cmnCommandLineOptions.h>
 #include <cisstCommon/cmnGetChar.h>
+#include <cisstCommon/cmnQt.h>
 #include <sawIntuitiveDaVinci/mtsIntuitiveDaVinci.h>
 #include <sawIntuitiveDaVinci/mtsIntuitiveDaVinciQt.h>
 
@@ -38,15 +39,12 @@ int main(int argc, char ** argv)
     cmnLogger::SetMaskClass("mtsIntuitiveDaVinci", CMN_LOG_ALLOW_ALL);
     cmnLogger::AddChannel(std::cerr, CMN_LOG_ALLOW_ERRORS_AND_WARNINGS);
 
-    // ---- WARNING: hack to remove ros args ----
-    ros::V_string argout;
-    ros::removeROSArgs(argc, argv, argout);
-    argc = argout.size();
-    // ------------------------------------------
+    // create ROS node handle
+    ros::init(argc, argv, "isi_ros", ros::init_options::AnonymousName);
+    ros::NodeHandle rosNodeHandle;
 
     // parse options
     cmnCommandLineOptions options;
-    std::string rosNamespace = "isi";
     double rosPeriod = 20.0 * cmn_ms; // isi api defined
     double tfPeriod = 20.0 * cmn_ms;
 
@@ -61,9 +59,8 @@ int main(int argc, char ** argv)
                               "period in seconds to read all components and broadcast tf2 (default 0.02, 20 ms, 50Hz).  There is no point to have a period higher than the da Vinci",
                               cmnCommandLineOptions::OPTIONAL_OPTION, &tfPeriod);
 
-    options.AddOptionOneValue("n", "ros-namespace",
-                              "ROS namespace to prefix all topics, must have start and end \"/\" (default /isi)",
-                              cmnCommandLineOptions::OPTIONAL_OPTION, &rosNamespace);
+    options.AddOptionNoValue("D", "dark-mode",
+                             "replaces the default Qt palette with darker colors");
 
     typedef std::list<std::string> managerConfigType;
     managerConfigType managerConfig;
@@ -93,18 +90,22 @@ int main(int argc, char ** argv)
     mtsIntuitiveDaVinciQt * daVinciQt = 0;
     if (hasQt) {
         application = new QApplication(argc, argv);
+        cmnQt::QApplicationExitsOnCtrlC();
+        if (options.IsSet("dark-mode")) {
+            cmnQt::SetDarkMode();
+        }
         daVinciQt = new mtsIntuitiveDaVinciQt();
         daVinciQt->Configure(daVinci);
         daVinciQt->Connect();
     }
 
     // ros wrapper
-    std::string bridgeName = "sawIntuitiveDaVinci" + rosNamespace;
-    std::replace(bridgeName.begin(), bridgeName.end(), '/', '_');
-    mtsROSBridge * rosBridge = new mtsROSBridge(bridgeName, rosPeriod, true);
-    mtsROSBridge * tfBridge = new mtsROSBridge(bridgeName + "_tf2", tfPeriod, true);
+    std::string bridgeName = "sawIntuitiveDaVinci";
+    mtsROSBridge * rosBridge = new mtsROSBridge(bridgeName, rosPeriod, &rosNodeHandle);
+    rosBridge->PerformsSpin(true);
+    mtsROSBridge * tfBridge = new mtsROSBridge(bridgeName + "_tf2", tfPeriod, &rosNodeHandle);
 
-    isi_ros * isiROS = new isi_ros(rosBridge, tfBridge, rosNamespace, daVinci);
+    isi_ros * isiROS = new isi_ros(rosBridge, tfBridge, daVinci);
 
     componentManager->AddComponent(rosBridge);
     componentManager->AddComponent(tfBridge);
@@ -150,6 +151,9 @@ int main(int argc, char ** argv)
 
     // stop all logs
     cmnLogger::Kill();
+
+    // stop ROS node
+    ros::shutdown();
 
     return 0;
 }

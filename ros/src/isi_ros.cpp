@@ -5,7 +5,7 @@
   Author(s):  Anton Deguet
   Created on: 2015-07-18
 
-  (C) Copyright 2015-2019 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2015-2020 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -23,9 +23,7 @@ http://www.cisst.org/cisst/license.txt.
 
 isi_ros::isi_ros(mtsROSBridge * bridge,
                  mtsROSBridge * tf_bridge,
-                 const std::string & ros_namespace,
                  mtsIntuitiveDaVinci * daVinci):
-    mNameSpace(ros_namespace),
     mDaVinci(daVinci)
 {
     Arms.push_back("MTML1");
@@ -67,7 +65,7 @@ isi_ros::isi_ros(mtsROSBridge * bridge,
     for (;
          armIter != armsEnd;
          ++armIter) {
-        const std::string arm_namespace = ros_namespace + "/" + *armIter;
+        const std::string arm_namespace = *armIter;
         bridge->AddPublisherFromCommandRead<prmStateJoint, sensor_msgs::JointState>
             (*armIter, "GetStateJoint",
              arm_namespace + "/state_joint_current");
@@ -111,7 +109,7 @@ isi_ros::isi_ros(mtsROSBridge * bridge,
     for (;
          mtmIter != mtmsEnd;
          ++mtmIter) {
-        const std::string arm_namespace = ros_namespace + "/" + *mtmIter;
+        const std::string arm_namespace = *mtmIter;
         ButtonEventsType::const_iterator buttonEventsIter = MTMsButtonEvents.begin();
         const ButtonEventsType::const_iterator buttonEventsEnd = MTMsButtonEvents.end();
         for (;
@@ -128,7 +126,7 @@ isi_ros::isi_ros(mtsROSBridge * bridge,
     for (;
          sujIter != sujsEnd;
          ++sujIter) {
-        const std::string suj_namespace = ros_namespace + "/SUJ/" + *sujIter;
+        const std::string suj_namespace = "SUJ/" + *sujIter;
         bridge->AddPublisherFromCommandRead<prmStateJoint, sensor_msgs::JointState>
             (*sujIter, "GetStateJointSetup",
              suj_namespace + "/state_joint_current");
@@ -146,7 +144,7 @@ isi_ros::isi_ros(mtsROSBridge * bridge,
          ++voidEventsIter) {
         bridge->AddPublisherFromEventVoid
             ("Console", *voidEventsIter,
-             ros_namespace + "/console/" + cmnStringToUnderscoreLower(*voidEventsIter));
+             "console/" + cmnStringToUnderscoreLower(*voidEventsIter));
     }
 
     ButtonEventsType::const_iterator buttonEventsIter = ConsoleButtonEvents.begin();
@@ -156,7 +154,7 @@ isi_ros::isi_ros(mtsROSBridge * bridge,
          ++buttonEventsIter) {
         bridge->AddPublisherFromEventWrite<prmEventButton, sensor_msgs::Joy>
             (*buttonEventsIter, "Button",
-             ros_namespace + "/console/" + cmnStringToUnderscoreLower(*buttonEventsIter));
+             "console/" + cmnStringToUnderscoreLower(*buttonEventsIter));
     }
 }
 
