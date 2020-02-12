@@ -1,5 +1,5 @@
 #
-# (C) Copyright 2009-2018 Johns Hopkins University (JHU), All Rights Reserved.
+# (C) Copyright 2009-2020 Johns Hopkins University (JHU), All Rights Reserved.
 #
 # --- begin cisst license - do not edit ---
 #
@@ -12,6 +12,7 @@
 # list of cisst libraries needed
 set (REQUIRED_CISST_LIBRARIES
      cisstCommon
+     cisstCommonQt
      cisstVector
      cisstOSAbstraction
      cisstMultiTask
@@ -48,6 +49,9 @@ if (cisst_FOUND_AS_REQUIRED)
                     console.cpp
                     )
     set_property (TARGET sawIntuitiveDaVinciConsoleQt PROPERTY FOLDER "sawIntuitiveDaVinci")
+
+    # until lib isi_api gets compile with -fPIC we might need this
+    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -no-pie")
 
     # link against non cisst libraries and saw components
     target_link_libraries (sawIntuitiveDaVinciConsoleQt
