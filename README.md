@@ -4,7 +4,7 @@ This SAW component contains code for interfacing with the da Vinci medical robot
 
 The `ros` folder contains code for a ROS node that interfaces with the sawIntuitiveDaVinci component and publishes the 3D transformations of each arm and setup joints as well as the joint states (position, velocity and effort) and some console events (foot pedals).  It also broadcasts transformations for `tf2`.  To build the ROS node, make sure you use `catkin build`.
 
-If needed, one can also add OpenIGTLink support using sawOpenIGTLink (contact the sawIntuitiveDaVinci developers if you need help with this).
+If needed, one can also add OpenIGTLink support using sawOpenIGTLink with a few simple configuration files.
 
 # Links
  * License: http://github.com/jhu-cisst/cisst/blob/master/license.txt
@@ -13,13 +13,14 @@ If needed, one can also add OpenIGTLink support using sawOpenIGTLink (contact th
 # Dependencies
  * cisst libraries: https://github.com/jhu-cisst/cisst
  * Qt for user interface
- * ROS (optional)
+ * ROS with cisst-ros (optional): https://github.com/jhu-cisst/cisst-ros
+ * OpenIGTLink with sawOpenIGTLink (optional): https://github.com/jhu-saw/sawOpenIGTLink
 
 # Running the examples
 
 ## Main example
 
-The main example provided is `sawIntuitiveDaVinciConsoleQt`.  You need to make sure your computer is on the same subnet as the da Vinci, i.e. you should be able to ping 10.0.0.5
+The main example provided is `sawIntuitiveDaVinciConsoleQt`.  You need to make sure your computer is on the same subnet as the da Vinci, i.e. you should be able to ping 10.0.0.5.  This example can be compiled on Linux or Windows.
 
 ## ROS
 
@@ -91,7 +92,7 @@ evince frames.pdf
 
 ## OpenIGTLink
 
-You will need to compile sawOpenIGTLink first: https://github.com/jhu-saw/sawOpenIGTLink
+You will need to compile sawOpenIGTLink first: https://github.com/jhu-saw/sawOpenIGTLink.  This should work on both Linux and Windows.
 
 Then you can start streaming data from the da Vinci using IGTL using a
 couple of configuration files, one to load the sawOpenIGTLink
