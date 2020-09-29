@@ -55,10 +55,10 @@ private:
 
 protected:
     struct ArmStruct {
-        mtsFunctionRead GetPositionCartesian;
-        mtsFunctionRead GetStateJoint;
-        mtsFunctionRead GetConfigurationJoint;
-        mtsFunctionRead GetPeriodStatistics;
+        mtsFunctionRead measured_cp;
+        mtsFunctionRead measured_js;
+        mtsFunctionRead configuration_js;
+        mtsFunctionRead period_statistics;
     } Arm;
 
 private:

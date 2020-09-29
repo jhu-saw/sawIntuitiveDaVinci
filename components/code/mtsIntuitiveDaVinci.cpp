@@ -1252,20 +1252,20 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
         }
         arm->StateTable->AddData(arm->PositionCartesian, "PositionCartesian");
         arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
-                                                    arm->PositionCartesian, "GetPositionCartesian");
+                                                    arm->PositionCartesian, "measured_cp");
         arm->StateTable->AddData(arm->VelocityCartesian, "VelocityCartesian");
         arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
-                                                    arm->VelocityCartesian, "GetVelocityCartesian");
+                                                    arm->VelocityCartesian, "measured_cv");
         arm->ConfigurationStateTable->AddData(arm->ConfigurationJoint, "ConfigurationJoint");
         arm->ConfigurationStateTable->Advance(); // to make sure latest values are "published"
         arm->ProvidedInterface->AddCommandReadState(*(arm->ConfigurationStateTable),
-                                                    arm->ConfigurationJoint, "GetConfigurationJoint");
+                                                    arm->ConfigurationJoint, "configuration_js");
         arm->StateTable->AddData(arm->StateJoint, "StateJoint");
         arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
-                                                    arm->StateJoint, "GetStateJoint");
+                                                    arm->StateJoint, "measured_js");
         arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
                                                     arm->StateTable->PeriodStats,
-                                                    "GetPeriodStatistics");
+                                                    "period_statistics");
 
         // follow mode button interface and event
         arm->FollowModeProvidedInterface = this->AddInterfaceProvided(manipulatorName + "FollowMode");

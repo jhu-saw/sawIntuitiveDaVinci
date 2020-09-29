@@ -42,11 +42,11 @@ mtsIntuitiveDaVinciArmQtWidget::mtsIntuitiveDaVinciArmQtWidget(const std::string
     // Setup CISST Interface
     mtsInterfaceRequired * interfaceRequired = AddInterfaceRequired("Manipulator");
     if (interfaceRequired) {
-        interfaceRequired->AddFunction("GetPositionCartesian", Arm.GetPositionCartesian);
-        interfaceRequired->AddFunction("GetConfigurationJoint", Arm.GetConfigurationJoint);
-        interfaceRequired->AddFunction("GetStateJoint", Arm.GetStateJoint);
+        interfaceRequired->AddFunction("measured_cp", Arm.measured_cp);
+        interfaceRequired->AddFunction("configuration_js", Arm.configuration_js);
+        interfaceRequired->AddFunction("measured_js", Arm.measured_js);
         QSysWidget->SetInterfaceRequired(interfaceRequired);
-        interfaceRequired->AddFunction("GetPeriodStatistics", Arm.GetPeriodStatistics);
+        interfaceRequired->AddFunction("period_statistics", Arm.period_statistics);
     }
     setupUi();
     startTimer(TimerPeriodInMilliseconds); // ms
@@ -92,25 +92,25 @@ void mtsIntuitiveDaVinciArmQtWidget::timerEvent(QTimerEvent * CMN_UNUSED(event))
     }
 
     mtsExecutionResult executionResult;
-    executionResult = Arm.GetPositionCartesian(PositionCartesian);
+    executionResult = Arm.measured_cp(PositionCartesian);
     if (!executionResult) {
-        CMN_LOG_CLASS_RUN_ERROR << "Manipulator.GetPositionCartesian failed, \""
+        CMN_LOG_CLASS_RUN_ERROR << "Manipulator.measured_cp failed, \""
                                 << executionResult << "\"" << std::endl;
     }
     QPCGWidget->SetValue(PositionCartesian);
 
-    executionResult = Arm.GetStateJoint(StateJoint);
+    executionResult = Arm.measured_js(StateJoint);
     if (executionResult) {
         if ((ConfigurationJoint.Name().size() != StateJoint.Name().size())
-            && (Arm.GetConfigurationJoint.IsValid())) {
-            Arm.GetConfigurationJoint(ConfigurationJoint);
+            && (Arm.configuration_js.IsValid())) {
+            Arm.configuration_js(ConfigurationJoint);
             QSJWidget->SetConfiguration(ConfigurationJoint);
         }
         QSJWidget->SetValue(StateJoint);
     }
     QSJWidget->SetValue(StateJoint);
 
-    Arm.GetPeriodStatistics(IntervalStatistics);
+    Arm.period_statistics(IntervalStatistics);
     QSysWidget->SetValue(IntervalStatistics);
 }
 

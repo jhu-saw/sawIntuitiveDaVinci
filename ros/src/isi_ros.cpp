@@ -67,28 +67,28 @@ isi_ros::isi_ros(mtsROSBridge * bridge,
          ++armIter) {
         const std::string arm_namespace = *armIter;
         bridge->AddPublisherFromCommandRead<prmStateJoint, sensor_msgs::JointState>
-            (*armIter, "GetStateJoint",
-             arm_namespace + "/state_joint_current");
+            (*armIter, "measured_js",
+             arm_namespace + "/measured_js");
         bridge->AddPublisherFromCommandRead<prmPositionCartesianGet, geometry_msgs::PoseStamped>
-            (*armIter, "GetPositionCartesian",
-             arm_namespace + "/position_cartesian_current");
+            (*armIter, "measured_cp",
+             arm_namespace + "/measured_cp");
         bridge->AddPublisherFromCommandRead<prmVelocityCartesianGet, geometry_msgs::TwistStamped>
-            (*armIter, "GetVelocityCartesian",
-             arm_namespace + "/twist_body_current");
+            (*armIter, "measured_cv",
+             arm_namespace + "/body/measured_cv");
 
         // MTM/PSM specific
         if ((*armIter == "MTML1") || (*armIter == "MTMR1")) {
             bridge->AddPublisherFromCommandRead<prmStateJoint, sensor_msgs::JointState>
                 (*armIter, "GetStateGripper",
-                 arm_namespace + "/state_gripper_current");
+                 arm_namespace + "/gripper/measured_js");
         } else if ((*armIter == "PSM1") || (*armIter == "PSM2") || (*armIter == "PSM3")) {
             bridge->AddPublisherFromCommandRead<prmStateJoint, sensor_msgs::JointState>
                 (*armIter, "GetStateJaw",
-                 arm_namespace + "/state_jaw_current");
+                 arm_namespace + "/jaw/measured_js");
         }
 
         // tf2
-        tf_bridge->Addtf2BroadcasterFromCommandRead(*armIter, "GetPositionCartesian");
+        tf_bridge->Addtf2BroadcasterFromCommandRead(*armIter, "measured_cp");
 
         // arm events
         ButtonEventsType::const_iterator buttonEventsIter = ArmsButtonEvents.begin();
@@ -129,10 +129,10 @@ isi_ros::isi_ros(mtsROSBridge * bridge,
         const std::string suj_namespace = "SUJ/" + *sujIter;
         bridge->AddPublisherFromCommandRead<prmStateJoint, sensor_msgs::JointState>
             (*sujIter, "GetStateJointSetup",
-             suj_namespace + "/state_joint_current");
+             suj_namespace + "/measured_js");
         bridge->AddPublisherFromCommandRead<prmPositionCartesianGet, geometry_msgs::PoseStamped>
             (*sujIter, "GetPositionCartesianRCM",
-             suj_namespace + "/position_cartesian_current");
+             suj_namespace + "/measured_cp");
 
         tf_bridge->Addtf2BroadcasterFromCommandRead(*sujIter, "GetPositionCartesianRCM");
     }
