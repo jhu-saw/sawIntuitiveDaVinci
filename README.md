@@ -19,7 +19,7 @@ If needed, one can also add OpenIGTLink support using sawOpenIGTLink (contact th
 
 ## Main example
 
-The main example provided is `sawNDIIntuitiveDaVinciQtExample`.  You need to make sure your computer is on the same subnet as the da Vinci, i.e. you should be able to ping 10.0.0.5
+The main example provided is `sawIntuitiveDaVinciConsoleQt`.  You need to make sure your computer is on the same subnet as the da Vinci, i.e. you should be able to ping 10.0.0.5
 
 ## ROS
 
@@ -30,36 +30,112 @@ rosrun isi_ros isi_console
 
 The topic names are based on the arm names:
 ```sh
-/isi/ECM1/position_cartesian_current
-/isi/ECM1/state_joint_current
-/isi/ECM1/twist_body_current
-/isi/MTML1/position_cartesian_current
-/isi/MTML1/state_joint_current
-/isi/MTML1/twist_body_current
-/isi/MTMR1/position_cartesian_current
-/isi/MTMR1/state_joint_current
-/isi/MTMR1/twist_body_current
-/isi/PSM1/position_cartesian_current
-/isi/PSM1/state_joint_current
-/isi/PSM1/twist_body_current
-/isi/PSM2/position_cartesian_current
-/isi/PSM2/state_joint_current
-/isi/PSM2/twist_body_current
-/isi/PSM3/position_cartesian_current
-/isi/PSM3/state_joint_current
-/isi/PSM3/twist_body_current
-/isi/SUJ/ECM1/position_cartesian_current
-/isi/SUJ/ECM1/state_joint_current
-/isi/SUJ/PSM1/position_cartesian_current
-/isi/SUJ/PSM1/state_joint_current
-/isi/SUJ/PSM2/position_cartesian_current
-/isi/SUJ/PSM2/state_joint_current
-/isi/SUJ/PSM3/position_cartesian_current
-/isi/SUJ/PSM3/state_joint_current
+rostopic list
+/ECM1/body/measured_cv
+/ECM1/follow_mode
+/ECM1/measured_cp
+/ECM1/measured_js
+/MTML1/body/measured_cv
+/MTML1/clutch
+/MTML1/follow_mode
+/MTML1/gripper/measured_js
+/MTML1/measured_cp
+/MTML1/measured_js
+/MTML1/select
+/MTMR1/body/measured_cv
+/MTMR1/clutch
+/MTMR1/follow_mode
+/MTMR1/gripper/measured_js
+/MTMR1/measured_cp
+/MTMR1/measured_js
+/MTMR1/select
+/PSM1/body/measured_cv
+/PSM1/follow_mode
+/PSM1/jaw/measured_js
+/PSM1/measured_cp
+/PSM1/measured_js
+/PSM2/body/measured_cv
+/PSM2/follow_mode
+/PSM2/jaw/measured_js
+/PSM2/measured_cp
+/PSM2/measured_js
+/PSM3/body/measured_cv
+/PSM3/follow_mode
+/PSM3/jaw/measured_js
+/PSM3/measured_cp
+/PSM3/measured_js
+/SUJ/ECM1/measured_cp
+/SUJ/ECM1/measured_js
+/SUJ/PSM1/measured_cp
+/SUJ/PSM1/measured_js
+/SUJ/PSM2/measured_cp
+/SUJ/PSM2/measured_js
+/SUJ/PSM3/measured_cp
+/SUJ/PSM3/measured_js
+/console/camera
+/console/camera_quick_tap
+/console/clutch
+/console/clutch_quick_tap
+/console/follow_mode
+/console/head_in
+/console/head_out
+/console/masters_as_mice
+/console/operator_present
 ```
 
 You can also visualize the tf2 output using:
 ```sh
 rosrun tf2_tools view_frames.py
 evince frames.pdf
+```
+
+## OpenIGTLink
+
+You will need to compile sawOpenIGTLink first: https://github.com/jhu-saw/sawOpenIGTLink
+
+Then you can start streaming data from the da Vinci using IGTL using a
+couple of configuration files, one to load the sawOpenIGTLink
+component (`manager-igtl.json`) and one to configure the IGTL bridge
+(`igtl-isi.json`).  Both files can be found in the `share` folder.
+
+To start any of the examples with the IGTL bridge, use the `-m` command line option (this option works with both example programs, `sawIntuitiveDaVinciConsoleQt` and `isi_ros/isi_console`:
+```sh
+sawIntuitiveDaVinciConsoleQt -m manager-igtl.json
+```
+
+To display all the data being streamed, you can use the following application (provided along sawOpenIGTLink):
+```sh
+igtl_receive localhost 18944
+```
+
+If you start the same application with a dummy device name, it will listen for a bit and list the devices it received data for.  For example:
+```sh
+igtl_receive localhost 18944 doesnotexist
+```
+will report:
+```
+ECM1/measured_cp
+ECM1/measured_cv
+ECM1/measured_js
+MTML1/measured_cp
+MTML1/measured_cv
+MTML1/measured_js
+MTMR1/measured_cp
+...
+```
+
+Then you can select a specific device using:
+```sh
+igtl_receive localhost 18944 PSM1/measured_cp
+```
+will report something like:
+```
+Device name: PSM1/measured_cp
+Time stamp: 26.185951038
+Receiving TRANSFORM data type.
+=============
+-0.76992, -0.337651, 0.541492, -0.0135498
+0.401987, -0.915644, 0.000608893, 0.00900606
+0.495609, 0.218142, 0.840705, 0.058111
+0, 0, 0, 1
 ```

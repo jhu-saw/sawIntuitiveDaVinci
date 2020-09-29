@@ -1,0 +1,36 @@
+/* -*- Mode: Javascript; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+{
+    "port": 18944,
+    "interfaces":
+    [
+        {
+            "component": "daVinci",
+            "interface-provided": "PSM1"
+        }
+        ,
+        {
+            "component": "daVinci",
+            "interface-provided": "PSM2"
+        }
+        ,
+        {
+            "component": "daVinci",
+            "interface-provided": "PSM3"
+        }
+        ,
+        {
+            "component": "daVinci",
+            "interface-provided": "ECM1"
+        }
+        ,
+        {
+            "component": "daVinci",
+            "interface-provided": "MTML1"
+        }
+        ,
+        {
+            "component": "daVinci",
+            "interface-provided": "MTMR1"
+        }
+    ]
+}
