@@ -39,12 +39,12 @@ int main(int argc, char ** argv)
 
     // parse options
     cmnCommandLineOptions options;
-    typedef std::list<std::string> managerConfigType;
-    managerConfigType managerConfig;
 
     options.AddOptionNoValue("t", "text-only",
                              "text only interface, do not create Qt widgets");
 
+    typedef std::list<std::string> managerConfigType;
+    managerConfigType managerConfig;
     options.AddOptionMultipleValues("m", "component-manager",
                                     "JSON files to configure component manager",
                                     cmnCommandLineOptions::OPTIONAL_OPTION, &managerConfig);
@@ -83,22 +83,9 @@ int main(int argc, char ** argv)
     }
 
     // custom user component
-    const managerConfigType::iterator endConfig = managerConfig.end();
-    for (managerConfigType::iterator iterConfig = managerConfig.begin();
-         iterConfig != endConfig;
-         ++iterConfig) {
-        if (!iterConfig->empty()) {
-            if (!cmnPath::Exists(*iterConfig)) {
-                CMN_LOG_INIT_ERROR << "File " << *iterConfig
-                                   << " not found!" << std::endl;
-            } else {
-                if (!componentManager->ConfigureJSON(*iterConfig)) {
-                    CMN_LOG_INIT_ERROR << "Configure: failed to configure component-manager for "
-                                       << *iterConfig << std::endl;
-                    return -1;
-                }
-            }
-        }
+    if (!componentManager->ConfigureJSON(managerConfig)) {
+        CMN_LOG_INIT_ERROR << "Configure: failed to configure component-manager, check cisstLog for error messages" << std::endl;
+        return -1;
     }
 
     //-------------- create the components ------------------
@@ -116,7 +103,9 @@ int main(int argc, char ** argv)
     componentManager->KillAllAndWait(2.0 * cmn_s);
     componentManager->Cleanup();
 
-    delete daVinciQt;
+    if (daVinciQt) {
+        delete daVinciQt;
+    }
     delete daVinci;
 
     // stop all logs

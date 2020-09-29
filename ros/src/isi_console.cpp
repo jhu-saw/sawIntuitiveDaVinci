@@ -45,12 +45,12 @@ int main(int argc, char ** argv)
 
     // parse options
     cmnCommandLineOptions options;
-    double rosPeriod = 20.0 * cmn_ms; // isi api defined
-    double tfPeriod = 20.0 * cmn_ms;
 
     options.AddOptionNoValue("t", "text-only",
                              "text only interface, do not create Qt widgets");
 
+    double rosPeriod = 20.0 * cmn_ms; // isi api defined
+    double tfPeriod = 20.0 * cmn_ms;
     options.AddOptionOneValue("p", "ros-period",
                               "period in seconds to read all tool positions (default 0.02, 20 ms, 50Hz).  There is no point to have a period higher than the da Vinci",
                               cmnCommandLineOptions::OPTIONAL_OPTION, &rosPeriod);
@@ -59,14 +59,14 @@ int main(int argc, char ** argv)
                               "period in seconds to read all components and broadcast tf2 (default 0.02, 20 ms, 50Hz).  There is no point to have a period higher than the da Vinci",
                               cmnCommandLineOptions::OPTIONAL_OPTION, &tfPeriod);
 
-    options.AddOptionNoValue("D", "dark-mode",
-                             "replaces the default Qt palette with darker colors");
-
     typedef std::list<std::string> managerConfigType;
     managerConfigType managerConfig;
     options.AddOptionMultipleValues("m", "component-manager",
-                                    "JSON file to configure component manager",
+                                    "JSON files to configure component manager",
                                     cmnCommandLineOptions::OPTIONAL_OPTION, &managerConfig);
+
+    options.AddOptionNoValue("D", "dark-mode",
+                             "replaces the default Qt palette with darker colors");
 
     std::string errorMessage;
     if (!options.Parse(argc, argv, errorMessage)) {
@@ -78,7 +78,6 @@ int main(int argc, char ** argv)
     const bool hasQt = !options.IsSet("text-only");
 
     mtsManagerLocal * componentManager = mtsManagerLocal::GetInstance();
-
 
     // daVinci wrapper
     mtsIntuitiveDaVinci * daVinci = new mtsIntuitiveDaVinci("daVinci", 50 /* Hz */);
@@ -112,21 +111,9 @@ int main(int argc, char ** argv)
     isiROS->Connect();
 
     // custom user component
-    const managerConfigType::iterator end = managerConfig.end();
-    for (managerConfigType::iterator iter = managerConfig.begin();
-         iter != end;
-         ++iter) {
-        if (!iter->empty()) {
-            if (!cmnPath::Exists(*iter)) {
-                CMN_LOG_INIT_ERROR << "File " << *iter
-                                   << " not found!" << std::endl;
-            } else {
-                if (!componentManager->ConfigureJSON(*iter)) {
-                    CMN_LOG_INIT_ERROR << "Configure: failed to configure component-manager" << std::endl;
-                    return -1;
-                }
-            }
-        }
+    if (!componentManager->ConfigureJSON(managerConfig)) {
+        CMN_LOG_INIT_ERROR << "Configure: failed to configure component-manager, check cisstLog for error messages" << std::endl;
+        return -1;
     }
 
     //-------------- create the components ------------------
