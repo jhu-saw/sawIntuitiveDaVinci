@@ -62,9 +62,9 @@ protected:
     } Arm;
 
 private:
-    prmPositionCartesianGet PositionCartesian;
-    prmStateJoint StateJoint;
-    prmConfigurationJoint ConfigurationJoint;
+    prmPositionCartesianGet m_measured_cp;
+    prmStateJoint m_measured_js;
+    prmConfigurationJoint m_configuration_js;
 
     prmPositionCartesianGetQtWidget * QPCGWidget;
     prmStateJointQtWidget * QSJWidget;

@@ -92,23 +92,23 @@ void mtsIntuitiveDaVinciArmQtWidget::timerEvent(QTimerEvent * CMN_UNUSED(event))
     }
 
     mtsExecutionResult executionResult;
-    executionResult = Arm.measured_cp(PositionCartesian);
+    executionResult = Arm.measured_cp(m_measured_cp);
     if (!executionResult) {
         CMN_LOG_CLASS_RUN_ERROR << "Manipulator.measured_cp failed, \""
                                 << executionResult << "\"" << std::endl;
     }
-    QPCGWidget->SetValue(PositionCartesian);
+    QPCGWidget->SetValue(m_measured_cp);
 
-    executionResult = Arm.measured_js(StateJoint);
+    executionResult = Arm.measured_js(m_measured_js);
     if (executionResult) {
-        if ((ConfigurationJoint.Name().size() != StateJoint.Name().size())
+        if ((m_configuration_js.Name().size() != m_measured_js.Name().size())
             && (Arm.configuration_js.IsValid())) {
-            Arm.configuration_js(ConfigurationJoint);
-            QSJWidget->SetConfiguration(ConfigurationJoint);
+            Arm.configuration_js(m_configuration_js);
+            QSJWidget->SetConfiguration(m_configuration_js);
         }
-        QSJWidget->SetValue(StateJoint);
+        QSJWidget->SetValue(m_measured_js);
     }
-    QSJWidget->SetValue(StateJoint);
+    QSJWidget->SetValue(m_measured_js);
 
     Arm.period_statistics(IntervalStatistics);
     QSysWidget->SetValue(IntervalStatistics);

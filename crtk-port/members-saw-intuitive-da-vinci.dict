@@ -1,0 +1,8 @@
+PositionCartesian = m_measured_cp
+VelocityCartesian = m_measured_cv
+StateJoint = m_measured_js
+ConfigurationJoint = m_configuration_js
+StateGripper = m_gripper_measured_js
+ConfigurationGripper = m_gripper_configuration_js
+StateJaw = m_jaw_measured_js
+ConfigurationJaw = m_jaw_configuration_js

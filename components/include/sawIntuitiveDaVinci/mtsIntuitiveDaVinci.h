@@ -132,10 +132,10 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
         mtsInterfaceProvided * ProvidedInterface;
         mtsFunctionVoid DataUpdated;
         mtsFloat DeviceTimestamp;
-        prmPositionCartesianGet PositionCartesian;
-        prmVelocityCartesianGet VelocityCartesian;
-        prmStateJoint StateJoint;
-        prmConfigurationJoint ConfigurationJoint;
+        prmPositionCartesianGet m_measured_cp;
+        prmVelocityCartesianGet m_measured_cv;
+        prmStateJoint m_measured_js;
+        prmConfigurationJoint m_configuration_js;
         mtsInterfaceProvided * FollowModeProvidedInterface;
         mtsFunctionWrite FollowMode;
     };
@@ -145,8 +145,8 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
     public:
         MasterArmData(void);
         mtsInterfaceProvided * SelectProvidedInterface;
-        prmStateJoint StateGripper;
-        prmConfigurationJoint ConfigurationGripper;
+        prmStateJoint m_gripper_measured_js;
+        prmConfigurationJoint m_gripper_configuration_js;
         mtsFunctionWrite Select;
         bool Selected;
         static const double SelectAngle;
@@ -162,8 +162,8 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
     class SlaveArmData: public ArmData {
     public:
         SlaveArmData(void);
-        prmStateJoint StateJaw;
-        prmConfigurationJoint ConfigurationJaw;
+        prmStateJoint m_jaw_measured_js;
+        prmConfigurationJoint m_jaw_configuration_js;
         prmPositionCartesianGet PositionCartesianRCM;
         prmPositionCartesianGet PositionCartesianSetup;
         prmStateJoint StateSUJ;
