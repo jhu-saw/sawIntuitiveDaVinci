@@ -16,5 +16,5 @@
     version: master   
 - git:
     local-name: cisst-saw/sawIntuitiveDaVinci
-    uri: https://github.com/jhu-saw/sawNDITracker
+    uri: https://github.com/jhu-saw/sawIntuitiveDaVinci
     version: devel
