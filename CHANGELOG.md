@@ -1,6 +1,22 @@
 Change log
 ==========
 
+2.0.0 (2021-04-13)
+==================
+
+* API changes:
+  * Renamed commands ROS topics for CRTK
+  * Some of *cisstMultiTask* symbols renamed can be found in `crtk-port/members-saw-intuitive-da-vinci.dict` and https://github.com/jhu-cisst/cisst/blob/master/utils/crtk-port/crtk-commands.dict
+  * ROS new names can be found in https://github.com/jhu-cisst/cisst/blob/master/utils/crtk-port/crtk-ros-commands.dict
+* Deprecated features:
+  * See API changes above
+* New features:
+  * Added example for sawOpenIGTLink
+  * More events supported: follow mode, operator present, MTM arm clutch
+* Bug fixes:
+  * Better support for ROS node, including `__ns:=` to set namespace
+  * Added `-no-pie` for executable linker to support isi-api compiled without `-fPIC`
+
 1.2.0 (2019-04-10)
 ==================
 
