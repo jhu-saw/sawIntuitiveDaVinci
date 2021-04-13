@@ -16,6 +16,10 @@ If needed, one can also add OpenIGTLink support using sawOpenIGTLink with a few 
  * ROS with cisst-ros (optional): https://github.com/jhu-cisst/cisst-ros
  * OpenIGTLink with sawOpenIGTLink (optional): https://github.com/jhu-saw/sawOpenIGTLink
 
+# Compilation
+
+If you are using this package on Linux with ROS, please download the code using the `.rosinstall` file in this repository and then compile using `catkin build` (**NOT** `catkin_make`).  The process is very similar to the compilation for the dVRK code: https://github.com/jhu-dvrk/sawIntuitiveResearchKit/wiki/CatkinBuild#catkin-build-and-rosinstall
+
 # Running the examples
 
 ## Main example
