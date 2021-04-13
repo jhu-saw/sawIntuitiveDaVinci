@@ -18,7 +18,10 @@ If needed, one can also add OpenIGTLink support using sawOpenIGTLink with a few 
 
 # Compilation
 
-If you are using this package on Linux with ROS, please download the code using the `.rosinstall` file in this repository and then compile using `catkin build` (**NOT** `catkin_make`).  The process is very similar to the compilation for the dVRK code: https://github.com/jhu-dvrk/sawIntuitiveResearchKit/wiki/CatkinBuild#catkin-build-and-rosinstall
+If you are using this package on Linux with ROS, please download the code using the `.rosinstall` file in this repository and then compile using `catkin build` (**NOT** `catkin_make`).  The process is very similar to the compilation for the dVRK code: https://github.com/jhu-dvrk/sawIntuitiveResearchKit/wiki/CatkinBuild#catkin-build-and-rosinstall but for `wstool`, use:
+```sh
+wstool merge https://raw.githubusercontent.com/jhu-saw/sawIntuitiveDaVinci/master/ros/isi.rosinstall
+```
 
 # Running the examples
 
