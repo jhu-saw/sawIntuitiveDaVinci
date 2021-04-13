@@ -1,5 +1,5 @@
 #
-# (C) Copyright 2009-2020 Johns Hopkins University (JHU), All Rights Reserved.
+# (C) Copyright 2009-2021 Johns Hopkins University (JHU), All Rights Reserved.
 #
 # --- begin cisst license - do not edit ---
 #
@@ -22,7 +22,7 @@ set (REQUIRED_CISST_LIBRARIES
      cisstQt)
 
 # find cisst and make sure the required libraries have been compiled
-find_package (cisst 1.0.11 REQUIRED ${REQUIRED_CISST_LIBRARIES})
+find_package (cisst 1.1.0 REQUIRED ${REQUIRED_CISST_LIBRARIES})
 
 if (cisst_FOUND_AS_REQUIRED)
 
@@ -36,7 +36,7 @@ if (cisst_FOUND_AS_REQUIRED)
   endif ()
 
   # sawIntuitiveDaVinci has been compiled within cisst, we should find it automatically
-  find_package (sawIntuitiveDaVinci 1.2.0)
+  find_package (sawIntuitiveDaVinci 2.0.0)
 
   if (sawIntuitiveDaVinci_FOUND)
 

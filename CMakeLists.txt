@@ -2,8 +2,7 @@
 # Author(s):  Anton Deguet
 # Created on: 2011-01-20
 #
-# (C) Copyright 2011-2017 Johns Hopkins University (JHU), All Rights
-# Reserved.
+# (C) Copyright 2011-2021 Johns Hopkins University (JHU), All Rights Reserved.
 #
 # --- begin cisst license - do not edit ---
 #
@@ -13,7 +12,7 @@
 #
 # --- end cisst license ---
 
-project (sawIntuitiveDaVinciAll)
+project (sawIntuitiveDaVinciPackage)
 
 cmake_minimum_required (VERSION 2.8)
 
