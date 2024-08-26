@@ -1159,7 +1159,7 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
                                                         "m_gripper_configuration_js");
             masterArm->ProvidedInterface->AddCommandReadState(*(masterArm->ConfigurationStateTable),
                                                               masterArm->m_gripper_configuration_js,
-                                                              "GetConfigurationGripper");
+                                                              "gripper/configuration_js");
             masterArm->m_gripper_measured_js.Name().ForceAssign(masterArm->m_gripper_configuration_js.Name());
             masterArm->m_gripper_measured_js.Position().SetSize(1);
             masterArm->m_gripper_measured_js.Velocity().SetSize(1);
@@ -1167,7 +1167,7 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
             masterArm->StateTable->AddData(masterArm->m_gripper_measured_js, "m_gripper_measured_js");
             masterArm->ProvidedInterface->AddCommandReadState(*(masterArm->StateTable),
                                                               masterArm->m_gripper_measured_js,
-                                                              "GetStateGripper");
+                                                              "gripper/measured_js");
         } else if (IsPSM(manipulatorIndex)) {
             // kinematic
             slaveArm->m_configuration_js.Name().SetSize(numberOfJoints - 1);
@@ -1199,7 +1199,7 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
             slaveArm->StateTable->AddData(slaveArm->m_jaw_measured_js, "m_jaw_measured_js");
             slaveArm->ProvidedInterface->AddCommandReadState(*(slaveArm->StateTable),
                                                               slaveArm->m_jaw_measured_js,
-                                                              "GetStateJaw");
+                                                              "jaw/measured_js");
         } else if (IsECM(manipulatorIndex)) {
             // kinematic only
             arm->m_configuration_js.Name().SetSize(numberOfJoints);

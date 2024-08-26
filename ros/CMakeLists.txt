@@ -1,5 +1,5 @@
 #
-# (C) Copyright 2009-2021 Johns Hopkins University (JHU), All Rights Reserved.
+# (C) Copyright 2009-2024 Johns Hopkins University (JHU), All Rights Reserved.
 #
 # --- begin cisst license - do not edit ---
 #
@@ -9,86 +9,104 @@
 #
 # --- end cisst license ---
 
-cmake_minimum_required (VERSION 2.8.3)
+cmake_minimum_required (VERSION 3.10)
+project (intuitive_da_vinci VERSION 1.1.0)
 
-project (isi_ros)
+# first test for ROS1
+find_package (catkin QUIET
+  COMPONENTS
+  cisst_ros_crtk
+  roscpp
+  roslib)
 
-find_package (catkin REQUIRED
-              COMPONENTS
-              cisst_ros_bridge
-              geometry_msgs
-              roscpp
-              std_msgs
-              roslib
-              )
+# ROS 1
+if (catkin_FOUND)
+  set (ROS_VERSION 1)
+else (catkin_FOUND)
 
-# list of cisst libraries needed
-set (REQUIRED_CISST_LIBRARIES
-     cisstCommon
-     cisstCommonQt
-     cisstVector
-     cisstOSAbstraction
-     cisstMultiTask
-     cisstMultiTaskQt
-     cisstParameterTypes
-     cisstParameterTypesQt
-     cisstQt)
+  # look for ROS2
+  find_package (ament_cmake QUIET)
+  if (ament_cmake_FOUND)
+    set (ROS_VERSION 2)
+    set (REQUIRED_AMENT_PACKAGES
+      rclcpp std_msgs std_srvs geometry_msgs sensor_msgs diagnostic_msgs
+      tf2_ros tf2_msgs cisst_msgs crtk_msgs cisst_ros_bridge cisst_ros_crtk)
+    foreach (_pkg ${REQUIRED_AMENT_PACKAGES})
+      find_package (${_pkg} REQUIRED)
+    endforeach ()
+
+  endif (ament_cmake_FOUND)
+endif (catkin_FOUND)
 
 # find cisst and make sure the required libraries have been compiled
-find_package (cisst 1.1.0 REQUIRED ${REQUIRED_CISST_LIBRARIES})
+set (REQUIRED_CISST_LIBRARIES
+  cisstCommon
+  cisstCommonQt
+  cisstVector
+  cisstOSAbstraction
+  cisstMultiTask
+  cisstMultiTaskQt
+  cisstParameterTypes
+  cisstParameterTypesQt
+  cisstQt)
+
+find_package (cisst 1.2.1 REQUIRED ${REQUIRED_CISST_LIBRARIES})
 
 if (cisst_FOUND_AS_REQUIRED)
 
   # load cisst configuration
   include (${CISST_USE_FILE})
 
-  # include_directories(include)
-  include_directories (${catkin_INCLUDE_DIRS}
-                       ${isi_ros_SOURCE_DIR}/include)
+  # set paths
+  cisst_set_output_path ()
 
-  file (MAKE_DIRECTORY "${CATKIN_DEVEL_PREFIX}/include")
-
-  catkin_package (INCLUDE_DIRS "${CATKIN_DEVEL_PREFIX}/include"
-                  LIBRARIES isi_ros
-                  CATKIN_DEPENDS cisst_ros_bridge geometry_msgs roscpp std_msgs)
-
+  # sawIntuitiveDaVinci has been compiled within cisst, we should find it automatically
   find_package (sawIntuitiveDaVinci 2.0.0)
 
   if (sawIntuitiveDaVinci_FOUND)
 
+    if (ROS_VERSION EQUAL 1)
+      file (MAKE_DIRECTORY "${CATKIN_DEVEL_PREFIX}/include")
+      catkin_package (INCLUDE_DIRS "${CATKIN_DEVEL_PREFIX}/include"
+        CATKIN_DEPENDS cisst_ros_crtk roscpp roslib)
+      include_directories (${catkin_INCLUDE_DIRS})
+    endif ()
+
     # sawIntuitiveDaVinci configuration
-    include_directories (${sawIntuitiveDaVinci_INCLUDE_DIR})
+    include_directories (${sawIntuitiveDaVinci_INCLUDE_DIR} "${intuitive_da_vinci_SOURCE_DIR}/include")
     link_directories (${sawIntuitiveDaVinci_LIBRARY_DIR})
 
-    add_library (isi_ros
-                 include/isi_ros/isi_ros.h
-                 src/isi_ros.cpp)
-
-    target_link_libraries (isi_ros
-                           ${sawIntuitiveDaVinci_LIBRARIES}
-                           )
-    # link against cisst libraries (and dependencies)
-    cisst_target_link_libraries (isi_ros ${REQUIRED_CISST_LIBRARIES})
-
-    # name the main executable and specifies with source files to use
-    add_executable (isi_console
-                    src/isi_console.cpp
-                    )
-    set_property (TARGET isi_console PROPERTY FOLDER "sawIntuitiveDaVinci")
+    add_executable (intuitive_da_vinci
+      include/isi_ros/isi_ros.h
+      src/isi_ros.cpp
+      src/isi_console.cpp)
 
     # until lib isi_api gets compile with -fPIC we might need this
     set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -no-pie")
 
-    # link against non cisst libraries and saw components
-    target_link_libraries (isi_console
-                           ${sawIntuitiveDaVinci_LIBRARIES}
-                           isi_ros
-                           ${catkin_LIBRARIES})
-    # link against cisst libraries (and dependencies)
-    cisst_target_link_libraries (isi_console ${REQUIRED_CISST_LIBRARIES})
+    target_link_libraries (intuitive_da_vinci
+      ${sawIntuitiveDaVinci_LIBRARIES}
+      ${catkin_LIBRARIES})
 
+    # link against cisst libraries (and dependencies)
+    cisst_target_link_libraries (intuitive_da_vinci ${REQUIRED_CISST_LIBRARIES})
+
+    install (TARGETS intuitive_da_vinci
+      LIBRARY DESTINATION lib/${PROJECT_NAME}
+      RUNTIME DESTINATION lib/${PROJECT_NAME}
+      LIBRARY DESTINATION lib
+      INCLUDES DESTINATION include)
+
+    if (ROS_VERSION EQUAL 2)
+      ament_target_dependencies (
+        intuitive_da_vinci
+        ${REQUIRED_AMENT_PACKAGES}
+        )
+      ament_package ()
+    endif ()
+
+  else (sawIntuitiveDaVinci_FOUND)
+    message ("Information: code in ${CMAKE_CURRENT_SOURCE_DIR} will not be compiled, it requires sawIntuitiveDaVinci")
   endif (sawIntuitiveDaVinci_FOUND)
 
-else (cisst_FOUND_AS_REQUIRED)
-  message ("Information: code in ${CMAKE_CURRENT_SOURCE_DIR} will not be compiled, it requires ${REQUIRED_CISST_LIBRARIES}")
 endif (cisst_FOUND_AS_REQUIRED)

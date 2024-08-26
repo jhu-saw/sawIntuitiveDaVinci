@@ -1,0 +1,4 @@
+{
+  "name": "intuitive_da_vinci",
+  "dependencies": ["cisst", "sawIntuitiveDaVinciCore"]
+}

@@ -5,7 +5,7 @@
   Author(s):  Anton Deguet
   Created on: 2015-05-23
 
-  (C) Copyright 2015-2020 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2015-2024 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -19,40 +19,20 @@ http://www.cisst.org/cisst/license.txt.
 #ifndef _isi_ros_h
 #define _isi_ros_h
 
-#include <string>
-#include <list>
+#include <cisst_ros_crtk/mts_ros_crtk_bridge_provided.h>
 
-class mtsIntuitiveDaVinci;
-class mtsROSBridge;
-
-class isi_ros
+class isi_ros: public mts_ros_crtk_bridge_provided
 {
 public:
-    isi_ros(mtsROSBridge * bridge,
-            mtsROSBridge * tf_bridge,
-            mtsIntuitiveDaVinci * daVinci);
-    void Connect(void);
+    isi_ros(const std::string & _da_vinci_component_name,
+            cisst_ral::node_ptr_t _node_handle,
+            const double _publish_period_in_seconds = 20.0 * cmn_ms,
+            const double _tf_period_in_seconds = 20.0 * cmn_ms);
 
 protected:
-    std::string mBridgeName;
-    std::string mTfBridgeName;
-    mtsIntuitiveDaVinci * mDaVinci;
-
-    typedef std::list<std::string> VoidEventsType;
-    VoidEventsType ConsoleVoidEvents;
-
-    typedef std::list<std::string> ButtonEventsType;
-    ButtonEventsType ConsoleButtonEvents;
-
-    typedef std::list<std::string> ArmsType;
-    ArmsType Arms;
-    ArmsType MTMs;
-
-    ButtonEventsType MTMsButtonEvents;
-    ButtonEventsType ArmsButtonEvents;
-
-    typedef std::list<std::string> SUJsType;
-    SUJsType SUJs;
+    std::string m_da_vinci_component_name;
+    double m_publish_period_in_seconds;
+    double m_tf_period_in_seconds;
 };
 
 #endif // _isi_ros_h
