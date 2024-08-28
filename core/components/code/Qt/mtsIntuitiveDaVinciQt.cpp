@@ -72,20 +72,20 @@ void mtsIntuitiveDaVinciQt::Configure(mtsIntuitiveDaVinci * daVinci)
 
     // Event (Buttons only)
     std::vector<std::string> buttons;
-    buttons.push_back("MTML1Select");
-    buttons.push_back("MTMR1Select");
-    buttons.push_back("MTML1Clutch");
-    buttons.push_back("MTMR1Clutch");
-    buttons.push_back("MTML1FollowMode");
-    buttons.push_back("MTMR1FollowMode");
-    buttons.push_back("PSM1FollowMode");
-    buttons.push_back("PSM2FollowMode");
-    buttons.push_back("PSM3FollowMode");
-    buttons.push_back("OperatorPresent");
-    buttons.push_back("Clutch");
-    buttons.push_back("Camera");
-    buttons.push_back("FollowMode");
-    buttons.push_back("MastersAsMice");
+    buttons.push_back("MTML1/select");
+    buttons.push_back("MTMR1/select");
+    buttons.push_back("MTML1/clutch");
+    buttons.push_back("MTMR1/clutch");
+    buttons.push_back("MTML1/follow_mode");
+    buttons.push_back("MTMR1/follow_mode");
+    buttons.push_back("PSM1/follow_mode");
+    buttons.push_back("PSM2/follow_mode");
+    buttons.push_back("PSM3/follow_mode");
+    buttons.push_back("console/operator_present");
+    buttons.push_back("console/clutch");
+    buttons.push_back("console/camera");
+    buttons.push_back("console/follow_mode");
+    buttons.push_back("console/masters_as_mice");
 
     prmEventButtonQtWidgetComponent * buttonsGUI = new prmEventButtonQtWidgetComponent("Buttons");
     componentManager->AddComponent(buttonsGUI);
