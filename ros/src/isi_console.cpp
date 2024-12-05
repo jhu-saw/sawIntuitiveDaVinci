@@ -4,7 +4,7 @@
   Author(s):  Anton Deguet
   Created on: 2013-02-07
 
-  (C) Copyright 2013-2020 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2013-2024 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -40,8 +40,8 @@ int main(int argc, char ** argv)
     cmnLogger::AddChannel(std::cerr, CMN_LOG_ALLOW_ERRORS_AND_WARNINGS);
 
     // create ROS node handle
-    ros::init(argc, argv, "isi_ros", ros::init_options::AnonymousName);
-    ros::NodeHandle rosNodeHandle;
+    cisst_ral::ral ral(argc, argv, "intuitive_da_vinci");
+    auto rosNode = ral.node();
 
     // parse options
     cmnCommandLineOptions options;
@@ -54,24 +54,18 @@ int main(int argc, char ** argv)
     options.AddOptionOneValue("p", "ros-period",
                               "period in seconds to read all tool positions (default 0.02, 20 ms, 50Hz).  There is no point to have a period higher than the da Vinci",
                               cmnCommandLineOptions::OPTIONAL_OPTION, &rosPeriod);
-
     options.AddOptionOneValue("P", "tf-ros-period",
                               "period in seconds to read all components and broadcast tf2 (default 0.02, 20 ms, 50Hz).  There is no point to have a period higher than the da Vinci",
                               cmnCommandLineOptions::OPTIONAL_OPTION, &tfPeriod);
 
-    typedef std::list<std::string> managerConfigType;
-    managerConfigType managerConfig;
+    std::list<std::string> managerConfig;
     options.AddOptionMultipleValues("m", "component-manager",
                                     "JSON files to configure component manager",
                                     cmnCommandLineOptions::OPTIONAL_OPTION, &managerConfig);
-
     options.AddOptionNoValue("D", "dark-mode",
                              "replaces the default Qt palette with darker colors");
 
-    std::string errorMessage;
-    if (!options.Parse(argc, argv, errorMessage)) {
-        std::cerr << "Error: " << errorMessage << std::endl;
-        options.PrintUsage(std::cerr);
+    if (!options.Parse(argc, argv, std::cerr)) {
         return -1;
     }
 
@@ -99,15 +93,8 @@ int main(int argc, char ** argv)
     }
 
     // ros wrapper
-    std::string bridgeName = "sawIntuitiveDaVinci";
-    mtsROSBridge * rosBridge = new mtsROSBridge(bridgeName, rosPeriod, &rosNodeHandle);
-    rosBridge->PerformsSpin(true);
-    mtsROSBridge * tfBridge = new mtsROSBridge(bridgeName + "_tf2", tfPeriod, &rosNodeHandle);
-
-    isi_ros * isiROS = new isi_ros(rosBridge, tfBridge, daVinci);
-
-    componentManager->AddComponent(rosBridge);
-    componentManager->AddComponent(tfBridge);
+    isi_ros * isiROS = new isi_ros(daVinci->GetName(), rosNode, rosPeriod, tfPeriod);
+    componentManager->AddComponent(isiROS);
     isiROS->Connect();
 
     // custom user component
@@ -128,6 +115,13 @@ int main(int argc, char ** argv)
         } while (cmnGetChar() != 'q');
     }
 
+    // stop all logs
+    cmnLogger::Kill();
+
+    // stop ROS node
+    cisst_ral::shutdown();
+
+    // kill all components and perform cleanup
     componentManager->KillAllAndWait(2.0 * cmn_s);
     componentManager->Cleanup();
 
@@ -135,12 +129,6 @@ int main(int argc, char ** argv)
         delete daVinciQt;
     }
     delete daVinci;
-
-    // stop all logs
-    cmnLogger::Kill();
-
-    // stop ROS node
-    ros::shutdown();
 
     return 0;
 }

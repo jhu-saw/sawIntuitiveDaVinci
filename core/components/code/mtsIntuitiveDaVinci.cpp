@@ -5,7 +5,7 @@
   Author(s):  Anton Deguet, Nicolas Padoy
   Created on: 2010-04-06
 
-  (C) Copyright 2010-2019 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2010-2024 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -216,10 +216,10 @@ mtsIntuitiveDaVinci::ArmData::ArmData(void):
 {}
 
 
-const double mtsIntuitiveDaVinci::MasterArmData::SelectAngle = 0.2;
-const double mtsIntuitiveDaVinci::MasterArmData::ClutchAngle = 0.7;
+const double mtsIntuitiveDaVinci::MTMArmData::SelectAngle = 0.2;
+const double mtsIntuitiveDaVinci::MTMArmData::ClutchAngle = 0.7;
 
-mtsIntuitiveDaVinci::MasterArmData::MasterArmData(void):
+mtsIntuitiveDaVinci::MTMArmData::MTMArmData(void):
     SelectProvidedInterface(0),
     Selected(false),
     ClutchProvidedInterface(0),
@@ -228,7 +228,7 @@ mtsIntuitiveDaVinci::MasterArmData::MasterArmData(void):
 {}
 
 
-mtsIntuitiveDaVinci::SlaveArmData::SlaveArmData(void)
+mtsIntuitiveDaVinci::PSMArmData::PSMArmData(void)
 {}
 
 mtsIntuitiveDaVinci::ConsoleData::ConsoleData(void):
@@ -413,10 +413,10 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
     size_t numberOfJoints;
     bool eventCriterion;
     ArmData * arm;
-    MasterArmData * masterArm;
-    SlaveArmData * slaveArm;
+    MTMArmData * _mtm;
+    PSMArmData * _psm;
 
-    bool atLeastOneMasterSelected = false;
+    bool atLeastOneMTMSelected = false;
     prmEventButton buttonPayload;
     buttonPayload.SetValid(true);
     buttonPayload.SetTimestamp(mtsManagerLocal::GetInstance()->GetTimeServer().GetRelativeTime());
@@ -453,64 +453,64 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                     jointRef.SetRef(numberOfJoints, streamData.data);
                     arm->m_measured_js.Position().Assign(jointRef);
                 } else if (IsMTM(index)) {
-                    masterArm = reinterpret_cast<MasterArmData *>(arm);
+                    _mtm = reinterpret_cast<MTMArmData *>(arm);
                     jointRef.SetRef(numberOfJoints - 1, streamData.data);
-                    masterArm->m_measured_js.Position().Assign(jointRef);
-                    masterArm->m_gripper_measured_js.Position().at(0) = streamData.data[numberOfJoints - 1];
-                    masterArm->m_gripper_measured_js.Valid() = true;
+                    _mtm->m_measured_js.Position().Assign(jointRef);
+                    _mtm->m_gripper_measured_js.Position().at(0) = streamData.data[numberOfJoints - 1];
+                    _mtm->m_gripper_measured_js.Valid() = true;
 
                     // compute angle on last joint to trigger select event
-                    eventCriterion = (masterArm->m_gripper_measured_js.Position().at(0) < MasterArmData::SelectAngle);
-                    if (eventCriterion && !masterArm->Selected) {
-                        atLeastOneMasterSelected = true;
+                    eventCriterion = (_mtm->m_gripper_measured_js.Position().at(0) < MTMArmData::SelectAngle);
+                    if (eventCriterion && !_mtm->Selected) {
+                        atLeastOneMTMSelected = true;
                         buttonPayload.SetType(prmEventButton::PRESSED);
-                        masterArm->Select(buttonPayload);
-                        masterArm->Selected = true;
-                        masterArm->ProvidedInterface->SendStatus("Gripper closed");
-                    } else if (!eventCriterion && masterArm->Selected) {
+                        _mtm->Select(buttonPayload);
+                        _mtm->Selected = true;
+                        _mtm->ProvidedInterface->SendStatus("Gripper closed");
+                    } else if (!eventCriterion && _mtm->Selected) {
                         buttonPayload.SetType(prmEventButton::RELEASED);
-                        masterArm->Select(buttonPayload);
-                        masterArm->Selected = false;
-                        masterArm->ProvidedInterface->SendStatus("Gripper opened");
+                        _mtm->Select(buttonPayload);
+                        _mtm->Selected = false;
+                        _mtm->ProvidedInterface->SendStatus("Gripper opened");
                     }
                     // clutch on masters makes sense only when master clutch is on
                     if (this->Console.Clutched) {
                         // update clutch rest angle if needed
-                        if (masterArm->ClutchRestAngleNeedsUpdate) {
-                            masterArm->ClutchRestAngle = masterArm->m_measured_js.Position()[numberOfJoints - 2];
-                            masterArm->ClutchRestAngleNeedsUpdate = false;
+                        if (_mtm->ClutchRestAngleNeedsUpdate) {
+                            _mtm->ClutchRestAngle = _mtm->m_measured_js.Position()[numberOfJoints - 2];
+                            _mtm->ClutchRestAngleNeedsUpdate = false;
                         }
                         // compute angle on before last joint to trigger select event
-                        eventCriterion = (fabs((masterArm->m_measured_js.Position()[numberOfJoints - 2])
-                                               - masterArm->ClutchRestAngle) > MasterArmData::ClutchAngle);
-                        if (eventCriterion && !masterArm->Clutched) {
+                        eventCriterion = (fabs((_mtm->m_measured_js.Position()[numberOfJoints - 2])
+                                               - _mtm->ClutchRestAngle) > MTMArmData::ClutchAngle);
+                        if (eventCriterion && !_mtm->Clutched) {
                             buttonPayload.SetType(prmEventButton::PRESSED);
-                            masterArm->Clutch(buttonPayload);
-                            masterArm->Clutched = true;
-                            masterArm->ProvidedInterface->SendStatus("Clutched");
-                        } else if (!eventCriterion && masterArm->Clutched) {
+                            _mtm->Clutch(buttonPayload);
+                            _mtm->Clutched = true;
+                            _mtm->ProvidedInterface->SendStatus("Clutched");
+                        } else if (!eventCriterion && _mtm->Clutched) {
                             buttonPayload.SetType(prmEventButton::RELEASED);
-                            masterArm->Clutch(buttonPayload);
-                            masterArm->Clutched = false;
-                            masterArm->ProvidedInterface->SendStatus("Unclutched");
+                            _mtm->Clutch(buttonPayload);
+                            _mtm->Clutched = false;
+                            _mtm->ProvidedInterface->SendStatus("Unclutched");
                         }
                     }
                 } else if (IsPSM(index)) {
-                    slaveArm = reinterpret_cast<SlaveArmData *>(arm);
+                    _psm = reinterpret_cast<PSMArmData *>(arm);
                     jointRef.SetRef(numberOfJoints - 1, streamData.data);
-                    slaveArm->m_measured_js.Position().Assign(jointRef);
-                    slaveArm->m_jaw_measured_js.Position().at(0) = streamData.data[numberOfJoints - 1];
-                    slaveArm->m_jaw_measured_js.Valid() = true;
+                    _psm->m_measured_js.Position().Assign(jointRef);
+                    _psm->m_jaw_measured_js.Position().at(0) = streamData.data[numberOfJoints - 1];
+                    _psm->m_jaw_measured_js.Valid() = true;
                 }
             }
         }
 
         // based on joints, figure out if we are entering MaM
         if (this->Console.Clutched // needs to be clutched
-            && atLeastOneMasterSelected // needs to have at least one arm clutched in this iteration
+            && atLeastOneMTMSelected // needs to have at least one arm clutched in this iteration
             && !this->Console.MastersAsMiced // needs not to be in MaM already
-            && this->MasterArms[0]->Selected // needs both arms to be clutched
-            && this->MasterArms[1]->Selected) {
+            && this->MTMArms[0]->Selected // needs both arms to be clutched
+            && this->MTMArms[1]->Selected) {
             buttonPayload.SetType(prmEventButton::PRESSED);
             this->Console.MastersAsMice(buttonPayload);
             this->Console.MastersAsMiced = true;
@@ -558,15 +558,15 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                     jointVel.SetRef(numberOfJoints, streamData.data);
                     arm->m_measured_js.Velocity().Assign(jointVel);
                 } else if (IsMTM(index)) {
-                    masterArm = reinterpret_cast<MasterArmData *>(arm);
+                    _mtm = reinterpret_cast<MTMArmData *>(arm);
                     jointVel.SetRef(numberOfJoints - 1, streamData.data);
-                    masterArm->m_measured_js.Velocity().Assign(jointVel);
-                    masterArm->m_gripper_measured_js.Velocity().at(0) = streamData.data[numberOfJoints - 1];
+                    _mtm->m_measured_js.Velocity().Assign(jointVel);
+                    _mtm->m_gripper_measured_js.Velocity().at(0) = streamData.data[numberOfJoints - 1];
                 } else if (IsPSM(index)) {
-                    slaveArm = reinterpret_cast<SlaveArmData *>(arm);
+                    _psm = reinterpret_cast<PSMArmData *>(arm);
                     jointVel.SetRef(numberOfJoints - 1, streamData.data);
-                    slaveArm->m_measured_js.Velocity().Assign(jointVel);
-                    slaveArm->m_jaw_measured_js.Velocity().at(0) = streamData.data[numberOfJoints - 1];
+                    _psm->m_measured_js.Velocity().Assign(jointVel);
+                    _psm->m_jaw_measured_js.Velocity().at(0) = streamData.data[numberOfJoints - 1];
                 }
             }
         }
@@ -597,10 +597,10 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                     jointTorque.SetRef(numberOfJoints, streamData.data);
                     arm->m_measured_js.Effort().Assign(jointTorque);
                 } else if (IsPSM(index)) {
-                    slaveArm = reinterpret_cast<SlaveArmData *>(arm);
+                    _psm = reinterpret_cast<PSMArmData *>(arm);
                     jointTorque.SetRef(numberOfJoints - 1, streamData.data);
-                    slaveArm->m_measured_js.Effort().Assign(jointTorque);
-                    slaveArm->m_jaw_measured_js.Effort().at(0) = streamData.data[numberOfJoints - 1];
+                    _psm->m_measured_js.Effort().Assign(jointTorque);
+                    _psm->m_jaw_measured_js.Effort().at(0) = streamData.data[numberOfJoints - 1];
                 }
             }
         }
@@ -653,7 +653,7 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
 
         // rcm transform for the patient side and endoscopic manipulators
         if ((index >= PSM1) && (index <= ECM1)) {
-            slaveArm = reinterpret_cast<SlaveArmData *>(arm);
+            _psm = reinterpret_cast<PSMArmData *>(arm);
 
             status = isi_get_stream_field(isiIndex, ISI_RCM_TRANSFORM, &streamData);
             if (status != ISI_SUCCESS) {
@@ -666,12 +666,12 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                     CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: received wrong number of elements for ISI_RCM_TRANSFORM, manipulator \""
                                             << ManipulatorIndexToString(index) << "\", expected 12, received "
                                             << streamData.count << std::endl;
-                    slaveArm->PositionCartesianRCM.Valid() = false;
+                    _psm->PositionCartesianRCM.Valid() = false;
                 } else {
                     ISI_TRANSFORM * isiTransform = reinterpret_cast<ISI_TRANSFORM *>(streamData.data);
                     mtsIntuitiveDaVinciUtilities::FrameFromISI(*isiTransform,
-                                                               slaveArm->PositionCartesianRCM.Position());
-                    slaveArm->PositionCartesianRCM.Valid() = true;
+                                                               _psm->PositionCartesianRCM.Position());
+                    _psm->PositionCartesianRCM.Valid() = true;
                 }
             }
 
@@ -687,12 +687,12 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                     CMN_LOG_CLASS_RUN_ERROR << "StreamCallback: received wrong number of elements for ISI_MOUNT_TRANSFORM, manipulator \""
                                             << ManipulatorIndexToString(index) << "\", expected 12, received "
                                             << streamData.count << std::endl;
-                    slaveArm->PositionCartesianSetup.Valid() = false;
+                    _psm->PositionCartesianSetup.Valid() = false;
                 } else {
                     ISI_TRANSFORM * isiTransform = reinterpret_cast<ISI_TRANSFORM *>(streamData.data);
                     mtsIntuitiveDaVinciUtilities::FrameFromISI(*isiTransform,
-                                                               slaveArm->PositionCartesianSetup.Position());
-                    slaveArm->PositionCartesianSetup.Valid() = true;
+                                                               _psm->PositionCartesianSetup.Position());
+                    _psm->PositionCartesianSetup.Valid() = true;
                 }
             }
 
@@ -710,13 +710,13 @@ void mtsIntuitiveDaVinci::StreamCallback(void)
                                             << ManipulatorIndexToString(index) << "\", expected "
                                             << numberOfJoints << ", received "
                                             << streamData.count << std::endl;
-                    slaveArm->StateSUJ.Valid() = false;
+                    _psm->StateSUJ.Valid() = false;
                 } else {
                     // save the joint values
                     vctDynamicConstVectorRef<float> jointPos;
                     jointPos.SetRef(numberOfJoints, streamData.data);
-                    slaveArm->StateSUJ.Position().Assign(jointPos);
-                    slaveArm->StateSUJ.Valid() = true;
+                    _psm->StateSUJ.Position().Assign(jointPos);
+                    _psm->StateSUJ.Valid() = true;
                 }
             }
         }
@@ -789,8 +789,8 @@ void mtsIntuitiveDaVinci::EventCallback(ManipulatorIndexType manipulatorIndex, i
         this->Console.Clutch(buttonPayload);
         this->Console.Clutched = true;
         // reset clutch angles on masters
-        this->MasterArms[0]->ClutchRestAngleNeedsUpdate = true;
-        this->MasterArms[1]->ClutchRestAngleNeedsUpdate = true;
+        this->MTMArms[0]->ClutchRestAngleNeedsUpdate = true;
+        this->MTMArms[1]->ClutchRestAngleNeedsUpdate = true;
         switch (manipulatorIndex) {
         case MTML1:
         case MTMR1:
@@ -872,12 +872,12 @@ void mtsIntuitiveDaVinci::EventCallback(ManipulatorIndexType manipulatorIndex, i
     case ISI_API_MTM_GRIP_A_UP:
     case ISI_API_MTM_GRIP_B_UP:
         buttonPayload.SetType(prmEventButton::RELEASED);
-        this->MasterArms[manipulatorIndex - MTML1]->Clutch(buttonPayload);
+        this->MTMArms[manipulatorIndex - MTML1]->Clutch(buttonPayload);
         break;
     case ISI_API_MTM_GRIP_A_DOWN:
     case ISI_API_MTM_GRIP_B_DOWN:
         buttonPayload.SetType(prmEventButton::PRESSED);
-        this->MasterArms[manipulatorIndex - MTML1]->Clutch(buttonPayload);
+        this->MTMArms[manipulatorIndex - MTML1]->Clutch(buttonPayload);
         break;
 
     default:
@@ -945,7 +945,7 @@ void mtsIntuitiveDaVinci::LogSystemConfiguration(cmnLogLevel logLevel) const
 
 
 void mtsIntuitiveDaVinci::LogManipulatorConfiguration(ManipulatorIndexType index,
-                                                      cmnLogLevel logLevel) const
+                                                      cmnLogLevel) const
 {
     // check if system is connected
     if (!this->Connected) {
@@ -962,7 +962,7 @@ void mtsIntuitiveDaVinci::LogManipulatorConfiguration(ManipulatorIndexType index
 
 
 void mtsIntuitiveDaVinci::LogToolConfiguration(ManipulatorIndexType index,
-                                               cmnLogLevel logLevel) const
+                                               cmnLogLevel) const
 {
     // check if system is connected
     if (!this->Connected) {
@@ -1048,16 +1048,16 @@ size_t mtsIntuitiveDaVinci::GetNumberOfSetupJoints(ManipulatorIndexType manipula
     ManipulatorType manipulatorType = mtsIntuitiveDaVinci::GetManipulatorType(manipulatorIndex);
     size_t numSetupJoints = -1;
     switch (manipulatorType) {
-        case MTM_TYPE:
-            numSetupJoints = 0;
-            break;
-        case ECM_TYPE:
-        case PSM_TYPE:
-            numSetupJoints = daVinci::NUM_SUJ_JOINTS;
-            break;
-        default:
-            CMN_LOG_INIT_ERROR << "Class mtsIntuitiveDaVinci: GetNumberOfSetupJoints: invalid manipulator type: " << manipulatorIndex << "  " << std::endl;
-            break;
+    case MTM_TYPE:
+        numSetupJoints = 0;
+        break;
+    case ECM_TYPE:
+    case PSM_TYPE:
+        numSetupJoints = daVinci::NUM_SUJ_JOINTS;
+        break;
+    default:
+        CMN_LOG_INIT_ERROR << "Class mtsIntuitiveDaVinci: GetNumberOfSetupJoints: invalid manipulator type: " << manipulatorIndex << "  " << std::endl;
+        break;
     }
     return numSetupJoints;
 }
@@ -1090,8 +1090,8 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
     CMN_LOG_CLASS_INIT_DEBUG << "SetupArmInterfaces: adding interfaces and state tables" << std::endl;
     ManipulatorIndexType manipulatorIndex;
     ArmData * arm;
-    MasterArmData * masterArm;
-    SlaveArmData * slaveArm;
+    MTMArmData * _mtm;
+    PSMArmData * _psm;
 
     size_t numberOfJoints;
     std::string manipulatorName;
@@ -1100,15 +1100,15 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
          manipulatorIndex <= ECM1;
          manipulatorIndex = static_cast<ManipulatorIndexType>(manipulatorIndex + 1)) {
         manipulatorName = mtsIntuitiveDaVinci::ManipulatorIndexToString(manipulatorIndex);
-        CMN_LOG_CLASS_INIT_DEBUG << "SetupMastersInterfaces: setting up arm \""
+        CMN_LOG_CLASS_INIT_DEBUG << "SetupMTMsInterfaces: setting up arm \""
                                  << manipulatorName << "\"" << std::endl;
         // create the structure based on arm type
         if (IsMTM(manipulatorIndex)) {
-            masterArm = new MasterArmData;
-            arm = masterArm;
+            _mtm = new MTMArmData;
+            arm = _mtm;
         } else if (IsPSM(manipulatorIndex) || IsECM(manipulatorIndex)) {
-            slaveArm= new SlaveArmData;
-            arm = slaveArm;
+            _psm= new PSMArmData;
+            arm = _psm;
         } else {
             CMN_LOG_CLASS_INIT_ERROR << "SetupArmInterfaces: invalid manipulator index" << std::endl;
         }
@@ -1137,69 +1137,69 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
 
         if (IsMTM(manipulatorIndex)) {
             // kinematic
-            masterArm->m_configuration_js.Name().SetSize(numberOfJoints - 1);
-            masterArm->m_configuration_js.Type().SetSize(numberOfJoints - 1);
-            masterArm->m_configuration_js.Name().at(0) = "outer_yaw";
-            masterArm->m_configuration_js.Name().at(1) = "shoulder_pitch";
-            masterArm->m_configuration_js.Name().at(2) = "elbow_pitch";
-            masterArm->m_configuration_js.Name().at(3) = "wrist_platform";
-            masterArm->m_configuration_js.Name().at(4) = "wrist_pitch";
-            masterArm->m_configuration_js.Name().at(5) = "wrist_yaw";
-            masterArm->m_configuration_js.Name().at(6) = "wrist_roll";
-            masterArm->m_measured_js.Name().ForceAssign(masterArm->m_configuration_js.Name());
-            masterArm->m_measured_js.Position().SetSize(numberOfJoints - 1);
-            masterArm->m_measured_js.Velocity().SetSize(numberOfJoints - 1);
-            masterArm->m_measured_js.Effort().SetSize(numberOfJoints - 1);
+            _mtm->m_configuration_js.Name().SetSize(numberOfJoints - 1);
+            _mtm->m_configuration_js.Type().SetSize(numberOfJoints - 1);
+            _mtm->m_configuration_js.Name().at(0) = "outer_yaw";
+            _mtm->m_configuration_js.Name().at(1) = "shoulder_pitch";
+            _mtm->m_configuration_js.Name().at(2) = "elbow_pitch";
+            _mtm->m_configuration_js.Name().at(3) = "wrist_platform";
+            _mtm->m_configuration_js.Name().at(4) = "wrist_pitch";
+            _mtm->m_configuration_js.Name().at(5) = "wrist_yaw";
+            _mtm->m_configuration_js.Name().at(6) = "wrist_roll";
+            _mtm->m_measured_js.Name().ForceAssign(_mtm->m_configuration_js.Name());
+            _mtm->m_measured_js.Position().SetSize(numberOfJoints - 1);
+            _mtm->m_measured_js.Velocity().SetSize(numberOfJoints - 1);
+            _mtm->m_measured_js.Effort().SetSize(numberOfJoints - 1);
             // gripper
-            masterArm->m_gripper_configuration_js.Name().SetSize(1);
-            masterArm->m_gripper_configuration_js.Type().SetSize(1);
-            masterArm->m_gripper_configuration_js.Name().at(0) = "finger_grips";
-            masterArm->m_gripper_configuration_js.Type().at(0) = PRM_JOINT_REVOLUTE;
-            masterArm->ConfigurationStateTable->AddData(masterArm->m_gripper_configuration_js,
-                                                        "m_gripper_configuration_js");
-            masterArm->ProvidedInterface->AddCommandReadState(*(masterArm->ConfigurationStateTable),
-                                                              masterArm->m_gripper_configuration_js,
-                                                              "GetConfigurationGripper");
-            masterArm->m_gripper_measured_js.Name().ForceAssign(masterArm->m_gripper_configuration_js.Name());
-            masterArm->m_gripper_measured_js.Position().SetSize(1);
-            masterArm->m_gripper_measured_js.Velocity().SetSize(1);
-            masterArm->m_gripper_measured_js.Effort().SetSize(0); // MTM doesn't report effort on gripper
-            masterArm->StateTable->AddData(masterArm->m_gripper_measured_js, "m_gripper_measured_js");
-            masterArm->ProvidedInterface->AddCommandReadState(*(masterArm->StateTable),
-                                                              masterArm->m_gripper_measured_js,
-                                                              "GetStateGripper");
+            _mtm->m_gripper_configuration_js.Name().SetSize(1);
+            _mtm->m_gripper_configuration_js.Type().SetSize(1);
+            _mtm->m_gripper_configuration_js.Name().at(0) = "finger_grips";
+            _mtm->m_gripper_configuration_js.Type().at(0) = PRM_JOINT_REVOLUTE;
+            _mtm->ConfigurationStateTable->AddData(_mtm->m_gripper_configuration_js,
+                                                   "m_gripper_configuration_js");
+            _mtm->ProvidedInterface->AddCommandReadState(*(_mtm->ConfigurationStateTable),
+                                                         _mtm->m_gripper_configuration_js,
+                                                         "gripper/configuration_js");
+            _mtm->m_gripper_measured_js.Name().ForceAssign(_mtm->m_gripper_configuration_js.Name());
+            _mtm->m_gripper_measured_js.Position().SetSize(1);
+            _mtm->m_gripper_measured_js.Velocity().SetSize(1);
+            _mtm->m_gripper_measured_js.Effort().SetSize(0); // MTM doesn't report effort on gripper
+            _mtm->StateTable->AddData(_mtm->m_gripper_measured_js, "m_gripper_measured_js");
+            _mtm->ProvidedInterface->AddCommandReadState(*(_mtm->StateTable),
+                                                         _mtm->m_gripper_measured_js,
+                                                         "gripper/measured_js");
         } else if (IsPSM(manipulatorIndex)) {
             // kinematic
-            slaveArm->m_configuration_js.Name().SetSize(numberOfJoints - 1);
-            slaveArm->m_configuration_js.Type().SetSize(numberOfJoints - 1);
-            slaveArm->m_configuration_js.Name().at(0) = "outer_yaw";
-            slaveArm->m_configuration_js.Name().at(1) = "outer_pitch";
-            slaveArm->m_configuration_js.Name().at(2) = "outer_insertion";
-            slaveArm->m_configuration_js.Name().at(3) = "outer_roll";
-            slaveArm->m_configuration_js.Name().at(4) = "outer_wrist_pitch";
-            slaveArm->m_configuration_js.Name().at(5) = "outer_wrist_yaw";
-            slaveArm->m_measured_js.Name().ForceAssign(slaveArm->m_configuration_js.Name());
-            slaveArm->m_measured_js.Position().SetSize(numberOfJoints - 1);
-            slaveArm->m_measured_js.Velocity().SetSize(numberOfJoints - 1);
-            slaveArm->m_measured_js.Effort().SetSize(numberOfJoints - 1);
+            _psm->m_configuration_js.Name().SetSize(numberOfJoints - 1);
+            _psm->m_configuration_js.Type().SetSize(numberOfJoints - 1);
+            _psm->m_configuration_js.Name().at(0) = "outer_yaw";
+            _psm->m_configuration_js.Name().at(1) = "outer_pitch";
+            _psm->m_configuration_js.Name().at(2) = "outer_insertion";
+            _psm->m_configuration_js.Name().at(3) = "outer_roll";
+            _psm->m_configuration_js.Name().at(4) = "outer_wrist_pitch";
+            _psm->m_configuration_js.Name().at(5) = "outer_wrist_yaw";
+            _psm->m_measured_js.Name().ForceAssign(_psm->m_configuration_js.Name());
+            _psm->m_measured_js.Position().SetSize(numberOfJoints - 1);
+            _psm->m_measured_js.Velocity().SetSize(numberOfJoints - 1);
+            _psm->m_measured_js.Effort().SetSize(numberOfJoints - 1);
             // jaw
-            slaveArm->m_jaw_configuration_js.Name().SetSize(1);
-            slaveArm->m_jaw_configuration_js.Type().SetSize(1);
-            slaveArm->m_jaw_configuration_js.Name().at(0) = "jaw";
-            slaveArm->m_jaw_configuration_js.Type().at(0) = PRM_JOINT_REVOLUTE;
-            slaveArm->ConfigurationStateTable->AddData(slaveArm->m_jaw_configuration_js,
-                                                       "m_jaw_configuration_js");
-            slaveArm->ProvidedInterface->AddCommandReadState(*(slaveArm->ConfigurationStateTable),
-                                                             slaveArm->m_jaw_configuration_js,
-                                                             "GetConfigurationJaw");
-            slaveArm->m_jaw_measured_js.Name().ForceAssign(slaveArm->m_jaw_configuration_js.Name());
-            slaveArm->m_jaw_measured_js.Position().SetSize(1);
-            slaveArm->m_jaw_measured_js.Velocity().SetSize(1);
-            slaveArm->m_jaw_measured_js.Effort().SetSize(1);
-            slaveArm->StateTable->AddData(slaveArm->m_jaw_measured_js, "m_jaw_measured_js");
-            slaveArm->ProvidedInterface->AddCommandReadState(*(slaveArm->StateTable),
-                                                              slaveArm->m_jaw_measured_js,
-                                                              "GetStateJaw");
+            _psm->m_jaw_configuration_js.Name().SetSize(1);
+            _psm->m_jaw_configuration_js.Type().SetSize(1);
+            _psm->m_jaw_configuration_js.Name().at(0) = "jaw";
+            _psm->m_jaw_configuration_js.Type().at(0) = PRM_JOINT_REVOLUTE;
+            _psm->ConfigurationStateTable->AddData(_psm->m_jaw_configuration_js,
+                                                   "m_jaw_configuration_js");
+            _psm->ProvidedInterface->AddCommandReadState(*(_psm->ConfigurationStateTable),
+                                                         _psm->m_jaw_configuration_js,
+                                                         "jaw/configuration_js");
+            _psm->m_jaw_measured_js.Name().ForceAssign(_psm->m_jaw_configuration_js.Name());
+            _psm->m_jaw_measured_js.Position().SetSize(1);
+            _psm->m_jaw_measured_js.Velocity().SetSize(1);
+            _psm->m_jaw_measured_js.Effort().SetSize(1);
+            _psm->StateTable->AddData(_psm->m_jaw_measured_js, "m_jaw_measured_js");
+            _psm->ProvidedInterface->AddCommandReadState(*(_psm->StateTable),
+                                                         _psm->m_jaw_measured_js,
+                                                         "jaw/measured_js");
         } else if (IsECM(manipulatorIndex)) {
             // kinematic only
             arm->m_configuration_js.Name().SetSize(numberOfJoints);
@@ -1255,7 +1255,7 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
                                                     arm->m_measured_cp, "measured_cp");
         arm->StateTable->AddData(arm->m_measured_cv, "m_measured_cv");
         arm->ProvidedInterface->AddCommandReadState(*(arm->StateTable),
-                                                    arm->m_measured_cv, "measured_cv");
+                                                    arm->m_measured_cv, "body/measured_cv");
         arm->ConfigurationStateTable->AddData(arm->m_configuration_js, "m_configuration_js");
         arm->ConfigurationStateTable->Advance(); // to make sure latest values are "published"
         arm->ProvidedInterface->AddCommandReadState(*(arm->ConfigurationStateTable),
@@ -1268,88 +1268,88 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
                                                     "period_statistics");
 
         // follow mode button interface and event
-        arm->FollowModeProvidedInterface = this->AddInterfaceProvided(manipulatorName + "FollowMode");
+        arm->FollowModeProvidedInterface = this->AddInterfaceProvided(manipulatorName + "/follow_mode");
         CMN_ASSERT(arm->FollowModeProvidedInterface);
         arm->FollowModeProvidedInterface->AddEventWrite(arm->FollowMode, "Button", prmEventButton());
     }
 }
 
 
-void mtsIntuitiveDaVinci::SetupMastersInterfaces(void)
+void mtsIntuitiveDaVinci::SetupMTMsInterfaces(void)
 {
-    CMN_LOG_CLASS_INIT_DEBUG << "SetupMastersInterfaces: adding master specific events and commands" << std::endl;
+    CMN_LOG_CLASS_INIT_DEBUG << "SetupMTMsInterfaces: adding master specific events and commands" << std::endl;
     ManipulatorIndexType manipulatorIndex;
-    MasterArmData * masterArm;
+    MTMArmData * _mtm;
     std::string manipulatorName;
     for (manipulatorIndex = MTML1;
          manipulatorIndex <= MTMR2;
          manipulatorIndex = static_cast<ManipulatorIndexType>(manipulatorIndex + 1)) {
         // retrieve pointer to arm from Arms array
-        masterArm = static_cast<MasterArmData *>(this->Arms[manipulatorIndex]);
-        CMN_ASSERT(masterArm);
-        MasterArms[manipulatorIndex - MTML1] = masterArm;
+        _mtm = static_cast<MTMArmData *>(this->Arms[manipulatorIndex]);
+        CMN_ASSERT(_mtm);
+        MTMArms[manipulatorIndex - MTML1] = _mtm;
         // events and commands specific to master arms
         manipulatorName = mtsIntuitiveDaVinci::ManipulatorIndexToString(manipulatorIndex);
         // select button interface and event
-        masterArm->SelectProvidedInterface = this->AddInterfaceProvided(manipulatorName + "Select");
-        CMN_ASSERT(masterArm->SelectProvidedInterface);
-        masterArm->SelectProvidedInterface->AddEventWrite(masterArm->Select, "Button", prmEventButton());
+        _mtm->SelectProvidedInterface = this->AddInterfaceProvided(manipulatorName + "/select");
+        CMN_ASSERT(_mtm->SelectProvidedInterface);
+        _mtm->SelectProvidedInterface->AddEventWrite(_mtm->Select, "Button", prmEventButton());
         // clutch button interface and event
-        masterArm->ClutchProvidedInterface = this->AddInterfaceProvided(manipulatorName + "Clutch");
-        CMN_ASSERT(masterArm->ClutchProvidedInterface);
-        masterArm->ClutchProvidedInterface->AddEventWrite(masterArm->Clutch, "Button", prmEventButton());
+        _mtm->ClutchProvidedInterface = this->AddInterfaceProvided(manipulatorName + "/clutch");
+        CMN_ASSERT(_mtm->ClutchProvidedInterface);
+        _mtm->ClutchProvidedInterface->AddEventWrite(_mtm->Clutch, "Button", prmEventButton());
     }
 }
 
 
-void mtsIntuitiveDaVinci::SetupSlavesInterfaces(void)
+void mtsIntuitiveDaVinci::SetupPSMsInterfaces(void)
 {
-    CMN_LOG_CLASS_INIT_DEBUG << "SetupSlavesInterfaces: adding slave specific events and commands" << std::endl;
+    CMN_LOG_CLASS_INIT_DEBUG << "SetupPSMsInterfaces: adding slave specific events and commands" << std::endl;
 
     ManipulatorIndexType manipulatorIndex;
-    SlaveArmData * slaveArm;
+    PSMArmData * _psm;
     std::string manipulatorName;
     for (manipulatorIndex = PSM1;
          manipulatorIndex <= ECM1;
          manipulatorIndex = static_cast<ManipulatorIndexType>(manipulatorIndex + 1)) {
         // retrieve pointer to arm from Arms array
-        slaveArm = static_cast<SlaveArmData *>(this->Arms[manipulatorIndex]);
-        CMN_ASSERT(slaveArm);
-        SlaveArms[manipulatorIndex - PSM1] = slaveArm;
+        _psm = static_cast<PSMArmData *>(this->Arms[manipulatorIndex]);
+        CMN_ASSERT(_psm);
+        PSMArms[manipulatorIndex - PSM1] = _psm;
         manipulatorName = mtsIntuitiveDaVinci::ManipulatorIndexToString(manipulatorIndex);
 
         // events and commands specific to slave arms
         // RCM
-        slaveArm->PositionCartesianRCM.SetMovingFrame(manipulatorName + "_RCM");
-        slaveArm->PositionCartesianRCM.SetReferenceFrame("Cart1");
-        slaveArm->StateTable->AddData(slaveArm->PositionCartesianRCM, "PositionCartesianRCM");
-        slaveArm->ProvidedInterface->AddCommandReadState(*(slaveArm->StateTable),
-                                                         slaveArm->PositionCartesianRCM, "GetPositionCartesianRCM");
+        _psm->PositionCartesianRCM.SetMovingFrame(manipulatorName + "_RCM");
+        _psm->PositionCartesianRCM.SetReferenceFrame("ECM");
+        _psm->StateTable->AddData(_psm->PositionCartesianRCM, "PositionCartesianRCM");
+        _psm->ProvidedInterface->AddCommandReadState(*(_psm->StateTable),
+                                                     _psm->PositionCartesianRCM, "SUJ/measured_cp");
         // Setup joints, cartesian
-        slaveArm->PositionCartesianSetup.SetMovingFrame(manipulatorName + "_SUJ");
-        slaveArm->PositionCartesianSetup.SetReferenceFrame("Cart1");
-        slaveArm->StateTable->AddData(slaveArm->PositionCartesianSetup, "PositionCartesianSetup");
-        slaveArm->ProvidedInterface->AddCommandReadState(*(slaveArm->StateTable),
-                                                         slaveArm->PositionCartesianSetup, "GetPositionCartesianSetup");
+        _psm->PositionCartesianSetup.SetMovingFrame(manipulatorName + "_SUJ");
+        _psm->PositionCartesianSetup.SetReferenceFrame("Cart1");
+        _psm->StateTable->AddData(_psm->PositionCartesianSetup, "PositionCartesianSetup");
+        _psm->ProvidedInterface->AddCommandReadState(*(_psm->StateTable),
+                                                     _psm->PositionCartesianSetup, "SUJ/local/measured_cp");
         // Setup joints, joint
-        slaveArm->ConfigurationSUJ.Name().SetSize(6);
+        _psm->ConfigurationSUJ.Name().SetSize(6);
         for (size_t jointIndex = 0; jointIndex < 6; ++jointIndex) {
             std::stringstream ss;
             ss.str() = "j";
             ss << jointIndex;
-            slaveArm->ConfigurationSUJ.Name().at(jointIndex) = ss.str();
+            _psm->ConfigurationSUJ.Name().at(jointIndex) = ss.str();
         }
-        slaveArm->ConfigurationSUJ.Type().SetSize(6);
-        slaveArm->ConfigurationSUJ.Type().SetAll(PRM_JOINT_REVOLUTE);
-        slaveArm->ConfigurationSUJ.Type().at(0) = PRM_JOINT_PRISMATIC;
-        slaveArm->ConfigurationStateTable->AddData(slaveArm->ConfigurationSUJ, "ConfigurationSUJ");
-        slaveArm->ProvidedInterface->AddCommandReadState(*(slaveArm->ConfigurationStateTable),
-                                                         slaveArm->ConfigurationSUJ, "GetConfigurationJointSetup");
-        slaveArm->StateSUJ.Name().ForceAssign(slaveArm->ConfigurationSUJ.Name());
-        slaveArm->StateSUJ.Position().SetSize(6);
-        slaveArm->StateTable->AddData(slaveArm->StateSUJ, "StateSUJ");
-        slaveArm->ProvidedInterface->AddCommandReadState(*(slaveArm->StateTable),
-                                                         slaveArm->StateSUJ, "GetStateJointSetup");
+        _psm->ConfigurationSUJ.Type().SetSize(6);
+        _psm->ConfigurationSUJ.Type().SetAll(PRM_JOINT_REVOLUTE);
+        _psm->ConfigurationSUJ.Type().at(0) = PRM_JOINT_PRISMATIC;
+        _psm->ConfigurationStateTable->AddData(_psm->ConfigurationSUJ, "ConfigurationSUJ");
+        _psm->ProvidedInterface->AddCommandReadState(*(_psm->ConfigurationStateTable),
+                                                     _psm->ConfigurationSUJ, "GetConfigurationJointSetup");
+        _psm->StateSUJ.Name().ForceAssign(_psm->ConfigurationSUJ.Name());
+        _psm->StateSUJ.Position().SetSize(6);
+        _psm->StateTable->AddData(_psm->StateSUJ, "StateSUJ");
+        _psm->ProvidedInterface->AddCommandReadState(*(_psm->StateTable),
+                                                     _psm->StateSUJ, "SUJ/measured_js");
     }
 }
 
@@ -1358,13 +1358,13 @@ void mtsIntuitiveDaVinci::SetupCameraInterfaces(void)
 {
     CMN_LOG_CLASS_INIT_DEBUG << "SetupCamerasInterfaces: adding camera specific events and commands" << std::endl;
     ManipulatorIndexType manipulatorIndex;
-    SlaveArmData * cameraArm;
+    PSMArmData * cameraArm;
     std::string manipulatorName;
     for (manipulatorIndex = ECM1;
          manipulatorIndex <= ECM1;
          manipulatorIndex = static_cast<ManipulatorIndexType>(manipulatorIndex + 1)) {
         // retrieve pointer to arm from Arms array
-        cameraArm = static_cast<SlaveArmData *>(this->Arms[manipulatorIndex]);
+        cameraArm = static_cast<PSMArmData *>(this->Arms[manipulatorIndex]);
         CMN_ASSERT(cameraArm);
         CameraArms[manipulatorIndex - ECM1] = cameraArm;
         // events and commands specific to camera arms
@@ -1378,28 +1378,28 @@ void mtsIntuitiveDaVinci::SetupConsoleInterfaces(void)
     Console.ProvidedInterface = this->AddInterfaceProvided("Console");
     CMN_ASSERT(Console.ProvidedInterface);
 
-    Console.ProvidedInterface->AddEventVoid(Console.HeadIn, "HeadIn");
-    Console.ProvidedInterface->AddEventVoid(Console.HeadOut, "HeadOut");
-    Console.ProvidedInterface->AddEventVoid(Console.ClutchQuickTap, "ClutchQuickTap");
-    Console.ProvidedInterface->AddEventVoid(Console.CameraQuickTap, "CameraQuickTap");
+    Console.ProvidedInterface->AddEventVoid(Console.HeadIn, "console/head_in");
+    Console.ProvidedInterface->AddEventVoid(Console.HeadOut, "console/head_out");
+    Console.ProvidedInterface->AddEventVoid(Console.ClutchQuickTap, "console/clutch_quick_tap");
+    Console.ProvidedInterface->AddEventVoid(Console.CameraQuickTap, "console/camera_quick_tap");
 
-    Console.OperatorPresentProvidedInterface = this->AddInterfaceProvided("OperatorPresent");
+    Console.OperatorPresentProvidedInterface = this->AddInterfaceProvided("console/operator_present");
     CMN_ASSERT(Console.OperatorPresentProvidedInterface);
     Console.OperatorPresentProvidedInterface->AddEventWrite(Console.OperatorPresent, "Button", prmEventButton());
 
-    Console.ClutchProvidedInterface = this->AddInterfaceProvided("Clutch");
+    Console.ClutchProvidedInterface = this->AddInterfaceProvided("console/clutch");
     CMN_ASSERT(Console.ClutchProvidedInterface);
     Console.ClutchProvidedInterface->AddEventWrite(Console.Clutch, "Button", prmEventButton());
 
-    Console.CameraProvidedInterface = this->AddInterfaceProvided("Camera");
+    Console.CameraProvidedInterface = this->AddInterfaceProvided("console/camera");
     CMN_ASSERT(Console.CameraProvidedInterface);
     Console.CameraProvidedInterface->AddEventWrite(Console.Camera, "Button", prmEventButton());
 
-    Console.MastersAsMiceProvidedInterface = this->AddInterfaceProvided("MastersAsMice");
+    Console.MastersAsMiceProvidedInterface = this->AddInterfaceProvided("console/masters_as_mice");
     CMN_ASSERT(Console.MastersAsMiceProvidedInterface);
     Console.MastersAsMiceProvidedInterface->AddEventWrite(Console.MastersAsMice, "Button", prmEventButton());
 
-    Console.FollowModeProvidedInterface = this->AddInterfaceProvided("FollowMode");
+    Console.FollowModeProvidedInterface = this->AddInterfaceProvided("console/follow_mode");
     CMN_ASSERT(Console.FollowModeProvidedInterface);
     Console.FollowModeProvidedInterface->AddEventWrite(Console.FollowMode, "Button", prmEventButton());
 
@@ -1416,10 +1416,10 @@ void mtsIntuitiveDaVinci::SetupConsoleInterfaces(void)
         console->ProvidedInterface = this->AddInterfaceProvided(manipulatorName);
         CMN_ASSERT(console->ProvidedInterface);
 
-        console->ProvidedInterface->AddEventVoid(console->HeadIn, "HeadIn");
-        console->ProvidedInterface->AddEventVoid(console->HeadOut, "HeadOut");
-        console->ProvidedInterface->AddEventVoid(console->ClutchQuickTap, "ClutchQuickTap");
-        console->ProvidedInterface->AddEventVoid(console->CameraQuickTap, "CameraQuickTap");
+        console->ProvidedInterface->AddEventVoid(console->HeadIn, "console/head_in");
+        console->ProvidedInterface->AddEventVoid(console->HeadOut, "console/head_out");
+        console->ProvidedInterface->AddEventVoid(console->ClutchQuickTap, "console/clutch_quick_tap");
+        console->ProvidedInterface->AddEventVoid(console->CameraQuickTap, "console/camera_quick_tap");
     }
 }
 
@@ -1449,8 +1449,8 @@ void mtsIntuitiveDaVinci::SetupAllInterfaces(void)
     // this must be called first
     this->SetupArmsInterfaces();
     // arm specific extra data
-    this->SetupMastersInterfaces();
-    this->SetupSlavesInterfaces();
+    this->SetupMTMsInterfaces();
+    this->SetupPSMsInterfaces();
     this->SetupCameraInterfaces();
     // console interface
     this->SetupConsoleInterfaces();

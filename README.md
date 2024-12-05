@@ -31,9 +31,9 @@ The main example provided is `sawIntuitiveDaVinciConsoleQt`.  You need to make s
 
 ## ROS
 
-Please read the section above to make sure you can communicate with the da Vinci.  The ROS node is `isi_console` and can be found in the package `isi_ros`:
+Please read the section above to make sure you can communicate with the da Vinci.  The ROS node is `intuitive_da_vinci` and can be found in the package `intuitive_da_vinci`:
 ```sh
-rosrun isi_ros isi_console
+rosrun intuitive_da_vinci intuitive_da_vinci
 ```
 
 The topic names are based on the arm names:
@@ -106,7 +106,7 @@ couple of configuration files, one to load the sawOpenIGTLink
 component (`manager-igtl.json`) and one to configure the IGTL bridge
 (`igtl-isi.json`).  Both files can be found in the `share` folder.
 
-To start any of the examples with the IGTL bridge, use the `-m` command line option (this option works with both example programs, `sawIntuitiveDaVinciConsoleQt` and `isi_ros/isi_console`:
+To start any of the examples with the IGTL bridge, use the `-m` command line option (this option works with both example programs, `sawIntuitiveDaVinciConsoleQt` and `intuitive_da_vinci/intuitive_da_vinci`:
 ```sh
 sawIntuitiveDaVinciConsoleQt -m manager-igtl.json
 ```
