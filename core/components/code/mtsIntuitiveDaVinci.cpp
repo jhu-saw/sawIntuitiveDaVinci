@@ -1133,12 +1133,12 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
         arm->ProvidedInterface->AddEventVoid(arm->DataUpdated, "DataUpdated");
         // resize containers for joint information
         numberOfJoints = mtsIntuitiveDaVinci::GetNumberOfJoints(manipulatorIndex);
-        arm->m_measured_js.Name().SetSize(numberOfJoints);
+        arm->m_measured_js.Name().resize(numberOfJoints);
 
         if (IsMTM(manipulatorIndex)) {
             // kinematic
-            _mtm->m_configuration_js.Name().SetSize(numberOfJoints - 1);
-            _mtm->m_configuration_js.Type().SetSize(numberOfJoints - 1);
+            _mtm->m_configuration_js.Name().resize(numberOfJoints - 1);
+            _mtm->m_configuration_js.Type().resize(numberOfJoints - 1);
             _mtm->m_configuration_js.Name().at(0) = "outer_yaw";
             _mtm->m_configuration_js.Name().at(1) = "shoulder_pitch";
             _mtm->m_configuration_js.Name().at(2) = "elbow_pitch";
@@ -1146,12 +1146,12 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
             _mtm->m_configuration_js.Name().at(4) = "wrist_pitch";
             _mtm->m_configuration_js.Name().at(5) = "wrist_yaw";
             _mtm->m_configuration_js.Name().at(6) = "wrist_roll";
-            _mtm->m_measured_js.Name().ForceAssign(_mtm->m_configuration_js.Name());
+            cmnDataCopy(_mtm->m_measured_js.Name(), _mtm->m_configuration_js.Name());
             _mtm->m_measured_js.Position().SetSize(numberOfJoints - 1);
             _mtm->m_measured_js.Velocity().SetSize(numberOfJoints - 1);
             _mtm->m_measured_js.Effort().SetSize(numberOfJoints - 1);
             // gripper
-            _mtm->m_gripper_configuration_js.Name().SetSize(1);
+            _mtm->m_gripper_configuration_js.Name().resize(1);
             _mtm->m_gripper_configuration_js.Type().SetSize(1);
             _mtm->m_gripper_configuration_js.Name().at(0) = "finger_grips";
             _mtm->m_gripper_configuration_js.Type().at(0) = PRM_JOINT_REVOLUTE;
@@ -1160,7 +1160,7 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
             _mtm->ProvidedInterface->AddCommandReadState(*(_mtm->ConfigurationStateTable),
                                                          _mtm->m_gripper_configuration_js,
                                                          "gripper/configuration_js");
-            _mtm->m_gripper_measured_js.Name().ForceAssign(_mtm->m_gripper_configuration_js.Name());
+            cmnDataCopy(_mtm->m_gripper_measured_js.Name(), _mtm->m_gripper_configuration_js.Name());
             _mtm->m_gripper_measured_js.Position().SetSize(1);
             _mtm->m_gripper_measured_js.Velocity().SetSize(1);
             _mtm->m_gripper_measured_js.Effort().SetSize(0); // MTM doesn't report effort on gripper
@@ -1170,7 +1170,7 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
                                                          "gripper/measured_js");
         } else if (IsPSM(manipulatorIndex)) {
             // kinematic
-            _psm->m_configuration_js.Name().SetSize(numberOfJoints - 1);
+            _psm->m_configuration_js.Name().resize(numberOfJoints - 1);
             _psm->m_configuration_js.Type().SetSize(numberOfJoints - 1);
             _psm->m_configuration_js.Name().at(0) = "outer_yaw";
             _psm->m_configuration_js.Name().at(1) = "outer_pitch";
@@ -1178,12 +1178,12 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
             _psm->m_configuration_js.Name().at(3) = "outer_roll";
             _psm->m_configuration_js.Name().at(4) = "outer_wrist_pitch";
             _psm->m_configuration_js.Name().at(5) = "outer_wrist_yaw";
-            _psm->m_measured_js.Name().ForceAssign(_psm->m_configuration_js.Name());
+            cmnDataCopy(_psm->m_measured_js.Name(), _psm->m_configuration_js.Name());
             _psm->m_measured_js.Position().SetSize(numberOfJoints - 1);
             _psm->m_measured_js.Velocity().SetSize(numberOfJoints - 1);
             _psm->m_measured_js.Effort().SetSize(numberOfJoints - 1);
             // jaw
-            _psm->m_jaw_configuration_js.Name().SetSize(1);
+            _psm->m_jaw_configuration_js.Name().resize(1);
             _psm->m_jaw_configuration_js.Type().SetSize(1);
             _psm->m_jaw_configuration_js.Name().at(0) = "jaw";
             _psm->m_jaw_configuration_js.Type().at(0) = PRM_JOINT_REVOLUTE;
@@ -1192,7 +1192,7 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
             _psm->ProvidedInterface->AddCommandReadState(*(_psm->ConfigurationStateTable),
                                                          _psm->m_jaw_configuration_js,
                                                          "jaw/configuration_js");
-            _psm->m_jaw_measured_js.Name().ForceAssign(_psm->m_jaw_configuration_js.Name());
+            cmnDataCopy(_psm->m_jaw_measured_js.Name(), _psm->m_jaw_configuration_js.Name());
             _psm->m_jaw_measured_js.Position().SetSize(1);
             _psm->m_jaw_measured_js.Velocity().SetSize(1);
             _psm->m_jaw_measured_js.Effort().SetSize(1);
@@ -1202,13 +1202,13 @@ void mtsIntuitiveDaVinci::SetupArmsInterfaces(void)
                                                          "jaw/measured_js");
         } else if (IsECM(manipulatorIndex)) {
             // kinematic only
-            arm->m_configuration_js.Name().SetSize(numberOfJoints);
+            arm->m_configuration_js.Name().resize(numberOfJoints);
             arm->m_configuration_js.Type().SetSize(numberOfJoints);
             arm->m_configuration_js.Name().at(0) = "outer_yaw";
             arm->m_configuration_js.Name().at(1) = "outer_pitch";
             arm->m_configuration_js.Name().at(2) = "insertion";
             arm->m_configuration_js.Name().at(3) = "outer_roll";
-            arm->m_measured_js.Name().ForceAssign(arm->m_configuration_js.Name());
+            cmnDataCopy(arm->m_measured_js.Name(), arm->m_configuration_js.Name());
             arm->m_measured_js.Position().SetSize(numberOfJoints);
             arm->m_measured_js.Velocity().SetSize(numberOfJoints);
             arm->m_measured_js.Effort().SetSize(numberOfJoints);
@@ -1332,7 +1332,7 @@ void mtsIntuitiveDaVinci::SetupPSMsInterfaces(void)
         _psm->ProvidedInterface->AddCommandReadState(*(_psm->StateTable),
                                                      _psm->PositionCartesianSetup, "SUJ/local/measured_cp");
         // Setup joints, joint
-        _psm->ConfigurationSUJ.Name().SetSize(6);
+        _psm->ConfigurationSUJ.Name().resize(6);
         for (size_t jointIndex = 0; jointIndex < 6; ++jointIndex) {
             std::stringstream ss;
             ss.str() = "j";
@@ -1345,7 +1345,7 @@ void mtsIntuitiveDaVinci::SetupPSMsInterfaces(void)
         _psm->ConfigurationStateTable->AddData(_psm->ConfigurationSUJ, "ConfigurationSUJ");
         _psm->ProvidedInterface->AddCommandReadState(*(_psm->ConfigurationStateTable),
                                                      _psm->ConfigurationSUJ, "GetConfigurationJointSetup");
-        _psm->StateSUJ.Name().ForceAssign(_psm->ConfigurationSUJ.Name());
+        cmnDataCopy(_psm->StateSUJ.Name(), _psm->ConfigurationSUJ.Name());
         _psm->StateSUJ.Position().SetSize(6);
         _psm->StateTable->AddData(_psm->StateSUJ, "StateSUJ");
         _psm->ProvidedInterface->AddCommandReadState(*(_psm->StateTable),
