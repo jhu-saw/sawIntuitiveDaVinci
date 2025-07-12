@@ -99,10 +99,10 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
     /*! Type of manipulator.  Note that indices are contiguous by type
       of manipulator. */
     typedef enum {
-        MTML1 = 0,          /*! Master Left 1*/
-        MTMR1,              /*! Master Right 1*/
-        MTML2,              /*! Master Left 2*/
-        MTMR2,              /*! Master Right 2*/
+        MTML1 = 0,          /*! MTM Left 1*/
+        MTMR1,              /*! MTM Right 1*/
+        MTML2,              /*! MTM Left 2*/
+        MTMR2,              /*! MTM Right 2*/
         PSM1,               /*! Patient side 1 */
         PSM2,               /*! Patient side 2 */
         PSM3,               /*! Patient side 3 */
@@ -114,7 +114,7 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
     } ManipulatorIndexType;
 
     typedef enum {
-        MTM_TYPE = 0,                    /*! Master Tool Manipulator */
+        MTM_TYPE = 0,                    /*! MTM Tool Manipulator */
         PSM_TYPE,                        /*! Patient Side Manipulator */
         ECM_TYPE,                        /*! Endoscopic Camera Manipulator */
         CONSOLE_TYPE,                    /*! Surgeon-Side Console */
@@ -141,9 +141,9 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
     };
 
     /*! Class to contain the data specific to the master arms */
-    class MasterArmData: public ArmData {
+    class MTMArmData: public ArmData {
     public:
-        MasterArmData(void);
+        MTMArmData(void);
         mtsInterfaceProvided * SelectProvidedInterface;
         prmStateJoint m_gripper_measured_js;
         prmConfigurationJoint m_gripper_configuration_js;
@@ -159,9 +159,9 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
     };
 
     /*! Class to contain the data specific to slave arms */
-    class SlaveArmData: public ArmData {
+    class PSMArmData: public ArmData {
     public:
-        SlaveArmData(void);
+        PSMArmData(void);
         prmStateJoint m_jaw_measured_js;
         prmConfigurationJoint m_jaw_configuration_js;
         prmPositionCartesianGet PositionCartesianRCM;
@@ -211,13 +211,13 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
     ArmData * Arms[(ECM1 - MTML1) + 1];
 
     /*! Info for all master arms, different way to access masters only */
-    MasterArmData * MasterArms[(MTMR2 - MTML1) + 1];
+    MTMArmData * MTMArms[(MTMR2 - MTML1) + 1];
 
     /*! Info for all slave arms, including camera */
-    SlaveArmData * SlaveArms[(ECM1 - PSM1) + 1];
+    PSMArmData * PSMArms[(ECM1 - PSM1) + 1];
 
     /*! Camera arm ECM1 */
-    SlaveArmData * CameraArms[(ECM1 - ECM1) + 1];
+    PSMArmData * CameraArms[(ECM1 - ECM1) + 1];
 
     /*! Console data */
     ConsoleData Console;
@@ -272,8 +272,8 @@ class CISST_EXPORT mtsIntuitiveDaVinci: public mtsTaskPeriodic { //mtsTaskFromSi
     //@{
     void SetupEventInterfaces(void);
     void SetupArmsInterfaces(void);
-    void SetupMastersInterfaces(void);
-    void SetupSlavesInterfaces(void);
+    void SetupMTMsInterfaces(void);
+    void SetupPSMsInterfaces(void);
     void SetupCameraInterfaces(void);
     void SetupConsoleInterfaces(void);
     void SetupAllInterfaces(void);

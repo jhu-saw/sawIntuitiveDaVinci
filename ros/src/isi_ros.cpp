@@ -5,7 +5,7 @@
   Author(s):  Anton Deguet
   Created on: 2015-07-18
 
-  (C) Copyright 2015-2020 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2015-2024 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -18,193 +18,33 @@ http://www.cisst.org/cisst/license.txt.
 
 #include <isi_ros/isi_ros.h>
 #include <cisst_ros_bridge/mtsROSBridge.h>
-#include <cisstCommon/cmnStrings.h>
-#include <sawIntuitiveDaVinci/mtsIntuitiveDaVinci.h>
 
-isi_ros::isi_ros(mtsROSBridge * bridge,
-                 mtsROSBridge * tf_bridge,
-                 mtsIntuitiveDaVinci * daVinci):
-    mDaVinci(daVinci)
+isi_ros::isi_ros(const std::string & _da_vinci_component_name,
+                 cisst_ral::node_ptr_t _node_handle,
+                 const double _publish_period_in_seconds,
+                 const double _tf_period_in_seconds):
+    mts_ros_crtk_bridge_provided(_da_vinci_component_name + "_ros_bridge",
+                                 _node_handle,
+                                 _publish_period_in_seconds),
+    m_da_vinci_component_name(_da_vinci_component_name),
+    m_publish_period_in_seconds(_publish_period_in_seconds),
+    m_tf_period_in_seconds(_tf_period_in_seconds)
 {
-    Arms.push_back("MTML1");
-    Arms.push_back("MTMR1");
-    Arms.push_back("PSM1");
-    Arms.push_back("PSM2");
-    Arms.push_back("PSM3");
-    Arms.push_back("ECM1");
+    std::list<std::string> console_void_events;
+    console_void_events.push_back("console/head_in");
+    console_void_events.push_back("console/head_out");
+    console_void_events.push_back("console/clutch_quick_tap");
+    console_void_events.push_back("console/camera_quick_tap");
 
-    SUJs.push_back("PSM1");
-    SUJs.push_back("PSM2");
-    SUJs.push_back("PSM3");
-    SUJs.push_back("ECM1");
+    this->bridge_all_interfaces_provided(m_da_vinci_component_name,
+                                         "", // namespace,
+                                         m_publish_period_in_seconds,
+                                         m_tf_period_in_seconds);
 
-    MTMs.push_back("MTML1");
-    MTMs.push_back("MTMR1");
-
-    MTMsButtonEvents.push_back("Select");
-    MTMsButtonEvents.push_back("Clutch");
-
-    ArmsButtonEvents.push_back("FollowMode");
-
-    ConsoleVoidEvents.push_back("HeadIn");
-    ConsoleVoidEvents.push_back("HeadOut");
-    ConsoleVoidEvents.push_back("ClutchQuickTap");
-    ConsoleVoidEvents.push_back("CameraQuickTap");
-
-    ConsoleButtonEvents.push_back("OperatorPresent");
-    ConsoleButtonEvents.push_back("Clutch");
-    ConsoleButtonEvents.push_back("Camera");
-    ConsoleButtonEvents.push_back("MastersAsMice");
-    ConsoleButtonEvents.push_back("FollowMode");
-
-    mBridgeName = bridge->GetName();
-    mTfBridgeName = tf_bridge->GetName();
-
-    ArmsType::const_iterator armIter = Arms.begin();
-    const ArmsType::const_iterator armsEnd = Arms.end();
-    for (;
-         armIter != armsEnd;
-         ++armIter) {
-        const std::string arm_namespace = *armIter;
-        bridge->AddPublisherFromCommandRead<prmStateJoint, sensor_msgs::JointState>
-            (*armIter, "measured_js",
-             arm_namespace + "/measured_js");
-        bridge->AddPublisherFromCommandRead<prmPositionCartesianGet, geometry_msgs::PoseStamped>
-            (*armIter, "measured_cp",
-             arm_namespace + "/measured_cp");
-        bridge->AddPublisherFromCommandRead<prmVelocityCartesianGet, geometry_msgs::TwistStamped>
-            (*armIter, "measured_cv",
-             arm_namespace + "/body/measured_cv");
-
-        // MTM/PSM specific
-        if ((*armIter == "MTML1") || (*armIter == "MTMR1")) {
-            bridge->AddPublisherFromCommandRead<prmStateJoint, sensor_msgs::JointState>
-                (*armIter, "GetStateGripper",
-                 arm_namespace + "/gripper/measured_js");
-        } else if ((*armIter == "PSM1") || (*armIter == "PSM2") || (*armIter == "PSM3")) {
-            bridge->AddPublisherFromCommandRead<prmStateJoint, sensor_msgs::JointState>
-                (*armIter, "GetStateJaw",
-                 arm_namespace + "/jaw/measured_js");
-        }
-
-        // tf2
-        tf_bridge->Addtf2BroadcasterFromCommandRead(*armIter, "measured_cp");
-
-        // arm events
-        ButtonEventsType::const_iterator buttonEventsIter = ArmsButtonEvents.begin();
-        const ButtonEventsType::const_iterator buttonEventsEnd = ArmsButtonEvents.end();
-        for (;
-             buttonEventsIter != buttonEventsEnd;
-             ++buttonEventsIter) {
-            bridge->AddPublisherFromEventWrite<prmEventButton, sensor_msgs::Joy>
-                (*armIter + *buttonEventsIter, "Button",
-                 arm_namespace + "/" + cmnStringToUnderscoreLower(*buttonEventsIter));
-        }
-
+    for (const auto & event : console_void_events) {
+        this->events_bridge().AddPublisherFromEventVoid("Console", event,
+                                                        event);
     }
-
-    // MTM events
-    ArmsType::const_iterator mtmIter = MTMs.begin();
-    const ArmsType::const_iterator mtmsEnd = MTMs.end();
-    for (;
-         mtmIter != mtmsEnd;
-         ++mtmIter) {
-        const std::string arm_namespace = *mtmIter;
-        ButtonEventsType::const_iterator buttonEventsIter = MTMsButtonEvents.begin();
-        const ButtonEventsType::const_iterator buttonEventsEnd = MTMsButtonEvents.end();
-        for (;
-             buttonEventsIter != buttonEventsEnd;
-             ++buttonEventsIter) {
-            bridge->AddPublisherFromEventWrite<prmEventButton, sensor_msgs::Joy>
-                (*mtmIter + *buttonEventsIter, "Button",
-                 arm_namespace + "/" + cmnStringToUnderscoreLower(*buttonEventsIter));
-        }
-    }
-
-    SUJsType::const_iterator sujIter = SUJs.begin();
-    const SUJsType::const_iterator sujsEnd = SUJs.end();
-    for (;
-         sujIter != sujsEnd;
-         ++sujIter) {
-        const std::string suj_namespace = "SUJ/" + *sujIter;
-        bridge->AddPublisherFromCommandRead<prmStateJoint, sensor_msgs::JointState>
-            (*sujIter, "GetStateJointSetup",
-             suj_namespace + "/measured_js");
-        bridge->AddPublisherFromCommandRead<prmPositionCartesianGet, geometry_msgs::PoseStamped>
-            (*sujIter, "GetPositionCartesianRCM",
-             suj_namespace + "/measured_cp");
-
-        tf_bridge->Addtf2BroadcasterFromCommandRead(*sujIter, "GetPositionCartesianRCM");
-    }
-
-    VoidEventsType::const_iterator voidEventsIter = ConsoleVoidEvents.begin();
-    const VoidEventsType::const_iterator voidEventsEnd = ConsoleVoidEvents.end();
-    for (;
-         voidEventsIter != voidEventsEnd;
-         ++voidEventsIter) {
-        bridge->AddPublisherFromEventVoid
-            ("Console", *voidEventsIter,
-             "console/" + cmnStringToUnderscoreLower(*voidEventsIter));
-    }
-
-    ButtonEventsType::const_iterator buttonEventsIter = ConsoleButtonEvents.begin();
-    const ButtonEventsType::const_iterator buttonEventsEnd = ConsoleButtonEvents.end();
-    for (;
-         buttonEventsIter != buttonEventsEnd;
-         ++buttonEventsIter) {
-        bridge->AddPublisherFromEventWrite<prmEventButton, sensor_msgs::Joy>
-            (*buttonEventsIter, "Button",
-             "console/" + cmnStringToUnderscoreLower(*buttonEventsIter));
-    }
-}
-
-void isi_ros::Connect(void)
-{
-    mtsManagerLocal * componentManager = mtsManagerLocal::GetInstance();
-
-    ArmsType::const_iterator armIter = Arms.begin();
-    const ArmsType::const_iterator armsEnd = Arms.end();
-    for (;
-         armIter != armsEnd;
-         ++armIter) {
-        componentManager->Connect(mBridgeName, *armIter,
-                                  mDaVinci->GetName(), *armIter);
-        componentManager->Connect(mTfBridgeName, *armIter,
-                                  mDaVinci->GetName(), *armIter);
-        ButtonEventsType::const_iterator buttonEventsIter = ArmsButtonEvents.begin();
-        const ButtonEventsType::const_iterator buttonEventsEnd = ArmsButtonEvents.end();
-        for (;
-             buttonEventsIter != buttonEventsEnd;
-             ++buttonEventsIter) {
-            componentManager->Connect(mBridgeName, *armIter + *buttonEventsIter,
-                                      mDaVinci->GetName(), *armIter + *buttonEventsIter);
-        }
-    }
-
-    ArmsType::const_iterator mtmIter = MTMs.begin();
-    const ArmsType::const_iterator mtmsEnd = MTMs.end();
-    for (;
-         mtmIter != mtmsEnd;
-         ++mtmIter) {
-        ButtonEventsType::const_iterator buttonEventsIter = MTMsButtonEvents.begin();
-        const ButtonEventsType::const_iterator buttonEventsEnd = MTMsButtonEvents.end();
-        for (;
-             buttonEventsIter != buttonEventsEnd;
-             ++buttonEventsIter) {
-            componentManager->Connect(mBridgeName, *mtmIter + *buttonEventsIter,
-                                      mDaVinci->GetName(), *mtmIter + *buttonEventsIter);
-        }
-    }
-
-    ButtonEventsType::const_iterator buttonEventsIter = ConsoleButtonEvents.begin();
-    const ButtonEventsType::const_iterator buttonEventsEnd = ConsoleButtonEvents.end();
-    for (;
-         buttonEventsIter != buttonEventsEnd;
-         ++buttonEventsIter) {
-        componentManager->Connect(mBridgeName, *buttonEventsIter,
-                                  mDaVinci->GetName(), *buttonEventsIter);
-    }
-
-    componentManager->Connect(mBridgeName, "Console",
-                              mDaVinci->GetName(), "Console");
+    this->m_connections.Add(this->events_bridge().GetName(), "Console",
+                            m_da_vinci_component_name, "Console");
 }
